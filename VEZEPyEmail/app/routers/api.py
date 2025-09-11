@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Dict
 from pydantic import BaseModel
 from db.repository import get_mailbox_id_for_user, list_messages_for_mailbox
+from app.security import require_scopes
 
 router = APIRouter()
 
@@ -19,10 +20,7 @@ class MessageOut(BaseModel):
     unread: bool | None = None
 
 
-async def auth_user(token: str = Query(None, alias="access_token")) -> None:
-    # Minimal OIDC/JWT placeholder: require any non-empty token; replace with real verification.
-    if token in (None, ""):
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
+auth_user = require_scopes(["email.read"])  # validates JWT and scope
 
 
 def _sample_messages(user: str) -> List[Dict]:

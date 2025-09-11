@@ -26,7 +26,7 @@
         <ul id="quests"></ul>
       </div>
       <div class="panel">
-        <h3>Inbox (@vezeuniqverse.com)</h3>
+        <h3>Inbox (@vezeuniqverse.com) <span id="mail-unread" style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;">0</span></h3>
         <div style="display:grid;gap:6px;margin-bottom:8px;">
           <input id="mail-user" placeholder="you@vezeuniqverse.com"/>
           <input id="mail-token" placeholder="access token (demo)"/>
@@ -64,24 +64,49 @@
         list.innerHTML = `<li style="color:#f88">${String(err)}</li>`;
       }
     }
-    loadBtn.addEventListener('click', ()=>{
-      const token = document.getElementById('mail-token').value.trim();
+    async function render(listData){
+      const items = (listData.messages||[]).map(m=>{
+        const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
+        const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;
+        return `<li>${unread}<a href=\"${emailUrl}\" target=\"_blank\" style=\"color:#93c5fd;text-decoration:none\"><strong>${m.subject}</strong></a><br/><span style=\"color:#9aa\">${m.snippet||''}</span></li>`;
+      }).join('');
+      list.innerHTML = items || '<li>No messages</li>';
+      const unreadCount = (listData.messages||[]).filter(m=>m.unread).length;
+      const badge = document.getElementById('mail-unread');
+      if(badge) badge.textContent = unreadCount;
+    }
+
+    async function load(){
       const user = input.value.trim();
+      const token = document.getElementById('mail-token').value.trim();
+      if(!user) return;
       const qp = new URLSearchParams({user});
       if(token) qp.set('access_token', token);
-      fetch(`/email/mail?${qp.toString()}`).then(async(res)=>{
-        if(!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        const items = (data.messages||[]).map(m=>{
-          const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
-          const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;
-          return `<li>${unread}<a href=\"${emailUrl}\" target=\"_blank\" style=\"color:#93c5fd;text-decoration:none\"><strong>${m.subject}</strong></a><br/><span style=\"color:#9aa\">${m.snippet||''}</span></li>`;
-        }).join('');
-        list.innerHTML = items || '<li>No messages</li>';
-      }).catch(err=>{
-        list.innerHTML = `<li style=\"color:#f88\">${String(err)}</li>`;
-      })
+      const res = await fetch(`/email/mail?${qp.toString()}`);
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    loadBtn.addEventListener('click', async()=>{
+      const token = document.getElementById('mail-token').value.trim();
+      const user = input.value.trim();
+      if(!user){ list.innerHTML = '<li>Enter email</li>'; return; }
+      try{
+        const data = await load();
+        await render(data);
+      }catch(err){ list.innerHTML = `<li style=\"color:#f88\">${String(err)}</li>`; }
     });
+
+    // Poll every 20s when user/token present
+    setInterval(async()=>{
+      try{
+        const user = input.value.trim();
+        const token = document.getElementById('mail-token').value.trim();
+        if(!user || !token) return;
+        const data = await load();
+        await render(data);
+      }catch(_){/* ignore */}
+    }, 20000);
   })();
 </script>
 {% endblock %}
