@@ -1,5 +1,3 @@
----
-
 # VEZEPyEmail — Python-only Email Platform (@vezeuniqverse.com)
 
 ## Architecture (C4-brief)
