@@ -1,6 +1,6 @@
 ---
 
-# 1) VEZEPyQuantumTime — Quantum + Relativity Simulation Hub
+#VEZEPyQuantumTime — Quantum + Relativity Simulation Hub
 
 **Use-cases:**
 
