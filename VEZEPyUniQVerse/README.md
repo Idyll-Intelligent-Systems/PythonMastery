@@ -1,616 +1,406 @@
-This is the “OS-level” platform of the VEZE brand: **one account, one identity, one hub, all services, everywhere.**
+**Python-only** FastAPI portal named **VEZEPyUniQVerse** that acts as the entrypoint website to all VEZE services (VEZEPyGame, VEZEPyEmail, VEZEPyWeb, VEZEPySports, VEZEPySocial, etc.).
+Work inside the repo **VEZEPyUniQVerse/** 
+All business logic must be in Python; client visuals can use **static CSS and a small vanilla JS file** (no build tools). Use **Jinja2** for templates.
 
----
+## 0) Requirements
 
-# 🌐 VEZEPyUniQVerse — The Unified Super Platform
+* Python 3.11+, FastAPI, Uvicorn, Jinja2, pydantic v2, redis (future), prometheus-client (metrics), opentelemetry (hook ready).
+* No Node build. One small `static/js/blackhole.js` allowed for animations.
+* Config-driven service registry via **`config/services.json`** and **env** overrides.
 
-## Vision
-
-VEZEPyUniQVerse is a **Python-powered super-ecosystem** integrating:
-
-* **VEZEPyWeb** (web presence, CMS, portals)
-* **VEZEPyGame** (gaming platform)
-* **VEZEPyCGrow** (career growth, ATS, analytics)
-* **VEZEPySports** (sports + fantasy + analytics)
-* **VEZEPyEmail** (mail system @vezeuniqverse.com)
-* **Future VEZE Services** (social, chat, commerce, IoT, health, fintech, etc.)
-
-It provides **one unified user identity** and **cross-service experience** delivered to **every global device class**:
-🌍 Web | 📱 iOS/Android | 💻 Windows/macOS/Linux | ⌚ WearOS/WatchOS | 🎮 PS5/Xbox/Steam Deck | 💳 GPay/ApplePay | 🔌 Chrome Extension | 🛰️ IoT consoles
-
----
-
-## Core Architecture
-
-### 1. **Platform Hub (FastAPI Gateway)**
-
-* Single **Auth & Identity** (OIDC provider, MFA, JWT per service).
-* **Service Registry & API Gateway**: each VEZE service (game, mail, social, commerce) registered + proxied.
-* **GraphQL façade** (Strawberry/FastAPI plugin) → single query layer for all VEZEPy services.
-* **Event Bus** (Redis Streams / Kafka) → global events like `user.signup`, `payment.completed`, `game.match.finished`, `email.delivered`.
-
-### 2. **Universal Data Layer**
-
-* **Global User Graph**: accounts, preferences, entitlements across services.
-* **Postgres cluster**: multi-schema, service-isolated, but unified by IDs.
-* **Redis global cache** for sessions, tokens, live feeds.
-* **Object store**: media, mail blobs, avatars, game assets.
-* **Observability mesh**: OTEL → Prometheus → Grafana with per-service dashboards.
-
-### 3. **Device Delivery**
-
-* **Web**: FastAPI + Jinja2/NiceGUI + HTMX.
-* **Mobile**: Python → Kivy/Briefcase (BeeWare) or Toga for native apps.
-* **Desktop**: PySide6/Eel for Electron-like shell, PyInstaller packaging.
-* **WearOS/WatchOS**: lightweight dashboards, notifications via WebSockets.
-* **Chrome/Edge Extension**: Python backend with minimal JS shim → API calls.
-* **Console (PS5/Xbox)**: game services bridged via WebSocket/REST; Python UI (Godot Python bindings or Unreal’s Python scripting for integrations).
-* **Payments**: GPay, ApplePay, UPI integrations via Python SDK wrappers.
-* **Global API SDK**: auto-generated Python/Swift/Kotlin/JS SDKs from OpenAPI specs → single codegen pipeline.
-
-### 4. **Security & Compliance**
-
-* OIDC + passkeys + app passwords (per-device).
-* End-to-end audit logs (tamper-evident).
-* Per-service rate limits & abuse detection (ML).
-* Data residency sharding (EU, US, India) with legal compliance (GDPR, HIPAA, RBI).
-
----
-
-## Example Data Model (Global Layer)
-
-```sql
-User(id, email, display_name, pwd_hash, devices[], roles[], created_at)
-Entitlement(user_id, service, tier, expiry)
-Session(id, user_id, device_id, token, last_seen)
-GlobalEvent(id, type, payload_json, ts)
-Device(id, user_id, type, os, push_token, registered_at)
-```
-
----
-
-## Unified APIs (FastAPI + GraphQL façade)
-
-### REST endpoints
-
-* `/auth/login`, `/auth/refresh`, `/auth/logout`
-* `/hub/services` → list all VEZEPy services user can access
-* `/hub/entitlements` → active subscriptions/licenses
-* `/hub/events` → WS/longpoll global stream
-* `/hub/devices` → manage registered devices
-
-### GraphQL (Strawberry)
-
-```graphql
-query {
-  me { id, displayName, email }
-  services { name, status, entitlements }
-  inbox(limit:10) { subject, from, date }
-  fantasyTeam(leagueId:1) { id, roster { name, points } }
-  careerAnalytics { score, recommendations }
-}
-```
-
----
-
-## Example Event Flow
-
-1. User signs up → `user.signup` emitted.
-2. Global hub → provisions entitlements across Email, Game, CGrow.
-3. Mobile app + Chrome extension → receive WS push “new entitlement available”.
-4. User opens VEZEPySports fantasy → pulls user graph from hub.
-5. User sends email → VEZEPyEmail emits `email.sent` → hub records global activity.
-
----
-
-## Futuristic Features
-
-* **Cross-service AI layer**:
-
-  * Summarize: “Tell me what happened across all my VEZE services today” (RAG across mail, sports, jobs, chats).
-  * Agents: auto-apply job, auto-book sports tickets, auto-play fantasy picks.
-* **Quantum Simulation Add-on** (future): unify with VEZEPyGame for time-travel simulation experiments.
-* **Cross-device sync**: open job on desktop → continue on WearOS → respond via Chrome extension.
-* **Universal wallet**: VEZEPyPay (crypto + fiat + tokenized assets).
-* **Privacy-first design**: per-service consent toggles in global settings.
-
----
-
-## Example Stub Code (Hub API)
-
-```python
-from fastapi import FastAPI, Depends, WebSocket
-from schemas import UserOut
-from db import get_session
-from events import emit_event
-
-app = FastAPI(title="VEZEPyUniQVerse Hub")
-
-@app.get("/hub/services")
-async def list_services(user: UserOut = Depends(...)):
-    return [
-        {"name":"VEZEPyWeb","status":"ok"},
-        {"name":"VEZEPyGame","status":"ok"},
-        {"name":"VEZEPyCGrow","status":"ok"},
-        {"name":"VEZEPySports","status":"ok"},
-        {"name":"VEZEPyEmail","status":"ok"}
-    ]
-
-@app.websocket("/hub/events")
-async def ws_events(ws: WebSocket):
-    await ws.accept()
-    await ws.send_json({"type":"hello","msg":"Welcome to VEZEPyUniQVerse"})
-    # subscribe to Redis Streams fanout
-    while True:
-        ev = await get_next_event()
-        await ws.send_json(ev)
-```
-
----
-
-## Runbook
-
-* **Dev startup**:
-
-  ```bash
-  uvicorn app.main:app --reload
-  python smtp/server.py       # Email
-  python streaming/hub_worker.py
-  ```
-* **Add service**: register in `/hub/services` DB + generate API SDK.
-* **Scaling**: hub horizontally scalable behind LB; Redis Streams cluster for events; Postgres partitioning by service.
-* **Global distribution**: deploy edge nodes (India, EU, US) with local caching + GDPR compliance.
-
----
-Awesome — here’s a **ready-to-commit, Python-only, enterprise scaffold** for **VEZEPyUniQVerse** (the global hub that unifies VEZEPyWeb, VEZEPyGame, VEZEPyCGrow, VEZEPySports, VEZEPyEmail, and future VEZE services). It includes a FastAPI gateway, GraphQL façade, unified identity/entitlements, device registry, global event bus (Redis Streams), WebSocket fanout, stubs to proxy downstream services, CI, Docker, and tests.
-
-Copy this into a new repo named `VEZEPyUniQVerse/`.
-
----
-
-# 📂 Repo layout
+## 1) Create project layout
 
 ```
 VEZEPyUniQVerse/
 ├─ pyproject.toml
 ├─ Dockerfile
-├─ .github/workflows/ci.yml
-├─ .pre-commit-config.yaml
-├─ mypy.ini
-├─ docs/
-│  ├─ openapi.yaml
-│  └─ adr-0001-architecture.md
-├─ config/
-│  ├─ settings.py
-│  └─ logging.py
 ├─ app/
 │  ├─ main.py
 │  ├─ deps.py
-│  ├─ auth.py
-│  ├─ graphql.py
-│  └─ routers/
-│     ├─ hub.py
-│     ├─ devices.py
-│     ├─ ws.py
-│     └─ services_proxy.py
-├─ schemas/
-│  ├─ core.py
-│  └─ service.py
-├─ db/
-│  ├─ database.py
-│  ├─ models.py
-│  └─ migrations/   (alembic)
-├─ streaming/
-│  ├─ queues.py
-│  └─ hub_worker.py
-├─ ops/
-│  ├─ runbook.md
-│  ├─ dashboards/global.json
-│  └─ sbom.json
+│  ├─ config.py
+│  ├─ routers/
+│  │  ├─ pages.py          # routes: /, /helm, /copilot, /verse, /express, /health, /metrics
+│  │  └─ ws.py             # WebSocket: /ws/copilot (echo stub)
+│  └─ ui/
+│     ├─ templates/
+│     │  ├─ base.html
+│     │  ├─ index.html     # landing (Black Hole / Nebula)
+│     │  ├─ helm.html      # VEZE Helm (services grid)
+│     │  ├─ copilot.html   # VEZE Copilot (chat UI)
+│     │  ├─ verse.html     # VEZE Verse (about/team)
+│     │  └─ express.html   # VEZE Express (X/IG/WA links)
+│     └─ static/
+│        ├─ css/theme.css
+│        └─ js/blackhole.js
+├─ config/
+│  └─ services.json
 └─ tests/
    └─ test_health.py
 ```
 
----
+## 2) Files and contents
 
-# 🧱 pyproject.toml
+### `pyproject.toml`
+
+Create a minimal project config:
 
 ```toml
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68","wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "veze-uniqverse"
+name = "veze-uniqverse-portal"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
-  "pydantic>=2.8",
-  "SQLAlchemy>=2.0",
-  "asyncpg>=0.29",
-  "alembic>=1.13",
   "jinja2>=3.1",
-  "redis>=5.0",
-  "httpx>=0.27",
-  "loguru>=0.7",
+  "pydantic>=2.8",
   "prometheus-client>=0.20",
   "opentelemetry-sdk>=1.27.0",
   "opentelemetry-instrumentation-fastapi>=0.48b0",
   "opentelemetry-exporter-otlp>=1.27.0",
-  "authlib>=1.3",
-  "python-multipart>=0.0.9",
-  "strawberry-graphql[fastapi]>=0.246.1",
-  "orjson>=3.10",
+  "python-multipart>=0.0.9"
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.5","black>=24.8","mypy>=1.11","pytest>=8.3","pytest-asyncio>=0.23","hypothesis>=6.104"]
+dev = ["ruff>=0.5","black>=24.8","mypy>=1.11","pytest>=8.3","pytest-asyncio>=0.23"]
 ```
 
----
-
-# ⚙️ config/settings.py
-
-```python
-from pydantic import BaseSettings, AnyUrl
-
-class Settings(BaseSettings):
-    APP_NAME: str = "VEZEPyUniQVerse Hub"
-    ENV: str = "dev"
-    DATABASE_URL: AnyUrl = "postgresql+asyncpg://user:pass@localhost:5432/uniqverse"
-    REDIS_URL: str = "redis://localhost:6379/0"
-    OIDC_ISSUER: str = "https://auth.vezeuniqverse.com"
-    OIDC_CLIENT_ID: str = "uniqverse-hub"
-    OIDC_CLIENT_SECRET: str = "change_me"
-    JWT_TTL_SECONDS: int = 900
-    # Downstream service base URLs (can be env-injected per environment)
-    SVC_WEB: str = "http://vezeweb:8000"
-    SVC_GAME: str = "http://vezegame:8000"
-    SVC_CGROW: str = "http://vezecgrow:8000"
-    SVC_SPORTS: str = "http://vezesports:8000"
-    SVC_EMAIL: str = "http://vezeemail:8000"
-
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
-```
-
----
-
-# 🗄️ db/database.py
-
-```python
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from config.settings import settings
-
-engine = create_async_engine(str(settings.DATABASE_URL), pool_pre_ping=True)
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-
-async def get_session() -> AsyncSession:
-    async with SessionLocal() as s:
-        yield s
-```
-
-# 🧩 db/models.py (global identity, entitlements, devices, events)
-
-```python
-from datetime import datetime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, JSON, Index
-
-class Base(DeclarativeBase): pass
-
-class User(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    display_name: Mapped[str] = mapped_column(String(120))
-    roles: Mapped[list[str]] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-
-class Entitlement(Base):
-    __tablename__ = "entitlements"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(index=True)
-    service: Mapped[str] = mapped_column(String(64))   # VEZEPyWeb / VEZEPyGame / etc.
-    tier: Mapped[str] = mapped_column(String(32), default="basic")
-    expiry: Mapped[datetime | None]
-
-class Device(Base):
-    __tablename__ = "devices"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(index=True)
-    kind: Mapped[str] = mapped_column(String(40))      # ios|android|mac|win|wear|chrome|ps5|xbox
-    os_ver: Mapped[str] = mapped_column(String(60))
-    push_token: Mapped[str | None]
-    registered_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-
-class GlobalEvent(Base):
-    __tablename__ = "global_events"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    type: Mapped[str] = mapped_column(String(64))
-    payload_json: Mapped[dict] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-
-Index("ix_entitlement_user_service", Entitlement.user_id, Entitlement.service, unique=True)
-```
-
----
-
-# 🧾 schemas/core.py
+### `app/config.py`
 
 ```python
 from pydantic import BaseModel
-from datetime import datetime
+from pathlib import Path
+import json, os
 
-class UserOut(BaseModel):
-    id: int; email: str; display_name: str; roles: list[str]; created_at: datetime
-
-class EntitlementOut(BaseModel):
-    service: str; tier: str; expiry: datetime | None
-
-class DeviceIn(BaseModel):
-    kind: str; os_ver: str; push_token: str | None = None
-
-class DeviceOut(BaseModel):
-    id: int; kind: str; os_ver: str; registered_at: datetime
-```
-
-# 🧾 schemas/service.py
-
-```python
-from pydantic import BaseModel
-
-class ServiceInfo(BaseModel):
+class Service(BaseModel):
     name: str
-    status: str = "ok"
-    base_url: str
-    entitlements: list[str] = []
+    display: str
+    url: str
+    icon: str | None = None
+    description: str | None = None
+
+def load_services() -> list[Service]:
+    cfg = Path("config/services.json")
+    data = json.loads(cfg.read_text())
+    # env override: VEZE_SERVICE_<NAME>=URL
+    for s in data:
+        env_key = f"VEZE_SERVICE_{s['name'].upper()}"
+        if os.getenv(env_key):
+            s["url"] = os.getenv(env_key)
+    return [Service(**s) for s in data]
 ```
 
----
+### `config/services.json`
 
-# 🔐 app/auth.py (minimal stubs; plug OIDC later)
+(Preload the common services; URLs can be local or your deployed hosts.)
 
-```python
-from fastapi import Depends, HTTPException
-from schemas.core import UserOut
-
-# For demo: return a fake user; replace with OIDC session/JWT verification.
-async def get_current_user() -> UserOut:
-    return UserOut(id=1, email="founder@vezeuniqverse.com", display_name="Founder", roles=["admin"], created_at=None)  # type: ignore
+```json
+[
+  {"name":"web","display":"VEZEPyWeb","url":"http://localhost:8001","icon":"🌐","description":"Web CMS & portals"},
+  {"name":"game","display":"VEZEPyGame","url":"http://localhost:8002","icon":"🎮","description":"Gaming platform"},
+  {"name":"cgrow","display":"VEZEPyCGrow","url":"http://localhost:8003","icon":"💼","description":"Career growth & ATS"},
+  {"name":"sports","display":"VEZEPySports","url":"http://localhost:8004","icon":"🏟️","description":"Sports & fantasy"},
+  {"name":"email","display":"VEZEPyEmail","url":"http://localhost:8005","icon":"✉️","description":"Mail @vezeuniqverse.com"},
+  {"name":"social","display":"VEZEPySocial","url":"http://localhost:8006","icon":"👥","description":"Community & feeds"}
+]
 ```
 
-# 🧰 app/deps.py
+### `app/deps.py`
 
 ```python
-from config.settings import settings
-from db.database import get_session
-from app.auth import get_current_user
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from fastapi import Response
 
-__all__ = ["settings", "get_session", "get_current_user"]
+REQS = Counter("veze_requests_total","Total HTTP requests", ["path"])
+
+def metrics_response() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 ```
 
----
-
-# 🌐 app/routers/hub.py (hub endpoints)
+### `app/routers/pages.py`
 
 ```python
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from db.database import get_session
-from db.models import Entitlement
-from schemas.core import UserOut, EntitlementOut
-from config.settings import settings
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from app.deps import REQS, metrics_response
+from app.config import load_services
 
 router = APIRouter()
 
-@router.get("/hub/services")
-async def list_services(user: UserOut = Depends(...)):
-    return [
-        {"name":"VEZEPyWeb",    "status":"ok", "base_url": settings.SVC_WEB},
-        {"name":"VEZEPyGame",   "status":"ok", "base_url": settings.SVC_GAME},
-        {"name":"VEZEPyCGrow",  "status":"ok", "base_url": settings.SVC_CGROW},
-        {"name":"VEZEPySports", "status":"ok", "base_url": settings.SVC_SPORTS},
-        {"name":"VEZEPyEmail",  "status":"ok", "base_url": settings.SVC_EMAIL},
-    ]
+@router.get("/health")
+async def health(): return {"status":"ok"}
 
-@router.get("/hub/entitlements", response_model=list[EntitlementOut])
-async def list_entitlements(
-    user: UserOut = Depends(...), session: AsyncSession = Depends(get_session)
-):
-    res = await session.execute(select(Entitlement).where(Entitlement.user_id == user.id))
-    ents = res.scalars().all()
-    return [EntitlementOut(service=e.service, tier=e.tier, expiry=e.expiry) for e in ents]
+@router.get("/metrics")
+async def metrics(): return metrics_response()
+
+@router.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    REQS.labels("/").inc()
+    return request.app.state.tpl.TemplateResponse("index.html", {"request": request})
+
+@router.get("/helm", response_class=HTMLResponse)
+async def helm(request: Request):
+    REQS.labels("/helm").inc()
+    services = load_services()
+    return request.app.state.tpl.TemplateResponse("helm.html", {"request": request, "services": services})
+
+@router.get("/copilot", response_class=HTMLResponse)
+async def copilot(request: Request):
+    REQS.labels("/copilot").inc()
+    return request.app.state.tpl.TemplateResponse("copilot.html", {"request": request})
+
+@router.get("/verse", response_class=HTMLResponse)
+async def verse(request: Request):
+    REQS.labels("/verse").inc()
+    return request.app.state.tpl.TemplateResponse("verse.html", {"request": request})
+
+@router.get("/express")
+async def express():
+    # Redirect to a simple page listing links (or external socials)
+    return RedirectResponse(url="/express/home")
+
+@router.get("/express/home", response_class=HTMLResponse)
+async def express_home(request: Request):
+    return request.app.state.tpl.TemplateResponse("express.html", {"request": request})
 ```
 
----
-
-# 📱 app/routers/devices.py (device registry)
-
-```python
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from db.database import get_session
-from db.models import Device
-from schemas.core import DeviceIn, DeviceOut, UserOut
-
-router = APIRouter()
-
-@router.post("/devices/register", response_model=DeviceOut, status_code=201)
-async def register_device(body: DeviceIn, session: AsyncSession = Depends(get_session), user: UserOut = Depends(...)):
-    d = Device(user_id=user.id, kind=body.kind, os_ver=body.os_ver, push_token=body.push_token)
-    session.add(d); await session.commit(); await session.refresh(d)
-    return DeviceOut(id=d.id, kind=d.kind, os_ver=d.os_ver, registered_at=d.registered_at)
-```
-
----
-
-# 🔌 app/routers/services\_proxy.py (proxy stubs to downstream services)
-
-```python
-from fastapi import APIRouter, Depends
-import httpx
-from config.settings import settings
-from schemas.core import UserOut
-
-router = APIRouter()
-
-@router.get("/proxy/sports/fixtures")
-async def proxy_sports_fixtures(user: UserOut = Depends(...)):
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(f"{settings.SVC_SPORTS}/matches")
-        return r.json()
-
-@router.get("/proxy/social/feed")
-async def proxy_social_feed(user: UserOut = Depends(...)):
-    # If you plug VEZEPySocial later, point here. For now a placeholder.
-    return {"feed": []}
-```
-
----
-
-# 🔔 app/routers/ws.py (global events WS)
+### `app/routers/ws.py`
 
 ```python
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from streaming.queues import subscribe_events
-
 router = APIRouter()
 clients: set[WebSocket] = set()
 
-@router.websocket("/hub/events")
-async def hub_events(ws: WebSocket):
+@router.websocket("/ws/copilot")
+async def ws_copilot(ws: WebSocket):
     await ws.accept(); clients.add(ws)
     try:
-        await ws.send_json({"type":"hello","msg":"VEZEPyUniQVerse events"})
-        async for ev in subscribe_events():
-            for c in list(clients):
-                try: await c.send_json(ev)
-                except Exception: clients.discard(c)
+        await ws.send_json({"role":"system","text":"VEZE Copilot online. Ask about any VEZE service."})
+        while True:
+            msg = await ws.receive_text()
+            # Echo stub; replace with your LLM backend
+            await ws.send_json({"role":"assistant","text":f"Echo: {msg}"})
     except WebSocketDisconnect:
         clients.discard(ws)
 ```
 
----
-
-# 🧠 app/graphql.py (Strawberry GraphQL façade)
-
-```python
-import strawberry
-from strawberry.fastapi import GraphQLRouter
-from typing import List
-from schemas.core import UserOut, EntitlementOut
-from fastapi import Depends
-from app.auth import get_current_user
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.database import get_session
-from sqlalchemy import select
-from db.models import Entitlement
-
-@strawberry.type
-class ServiceGQL:
-    name: str
-    status: str
-    base_url: str
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def me(self, user: UserOut = Depends(get_current_user)) -> str:
-        return f"{user.display_name} <{user.email}>"
-
-    @strawberry.field
-    async def services(self) -> List[ServiceGQL]:
-        return [
-            ServiceGQL(name="VEZEPyWeb", status="ok", base_url="web"),
-            ServiceGQL(name="VEZEPyGame", status="ok", base_url="game"),
-            ServiceGQL(name="VEZEPyCGrow", status="ok", base_url="cgrow"),
-            ServiceGQL(name="VEZEPySports", status="ok", base_url="sports"),
-            ServiceGQL(name="VEZEPyEmail", status="ok", base_url="email"),
-        ]
-
-    @strawberry.field
-    async def entitlements(self, session: AsyncSession = Depends(get_session), user: UserOut = Depends(get_current_user)) -> List[str]:
-        res = await session.execute(select(Entitlement).where(Entitlement.user_id==user.id))
-        return [f"{e.service}:{e.tier}" for e in res.scalars().all()]
-
-schema = strawberry.Schema(query=Query)
-router = GraphQLRouter(schema, path="/graphql")
-```
-
----
-
-# 🚪 app/main.py (wire it all)
+### `app/main.py`
 
 ```python
 from fastapi import FastAPI
-from app.routers import hub, devices, ws, services_proxy
-from app import graphql
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from app.routers import pages, ws
 
-app = FastAPI(title="VEZEPyUniQVerse Hub")
+app = FastAPI(title="VEZEPyUniQVerse")
 
-app.include_router(hub.router, tags=["hub"])
-app.include_router(devices.router, tags=["devices"])
+app.include_router(pages.router, tags=["pages"])
 app.include_router(ws.router, tags=["ws"])
-app.include_router(services_proxy.router, tags=["proxy"])
-app.include_router(graphql.router, tags=["graphql"])
+
+app.mount("/static", StaticFiles(directory="app/ui/static"), name="static")
+app.state.tpl = Jinja2Templates(directory="app/ui/templates")
 
 @app.get("/health")
 async def health(): return {"status":"ok"}
 ```
 
----
+### `app/ui/templates/base.html`
 
-# 📬 streaming/queues.py
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>VEZEPyUniQVerse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="/static/css/theme.css"/>
+</head>
+<body class="space-bg">
+  <nav class="veze-nav">
+    <a href="/" class="brand">VEZE UniQVerse</a>
+    <div class="menu">
+      <a href="/helm">VEZE Helm</a>
+      <a href="/copilot">VEZE Copilot</a>
+      <a href="/verse">VEZE Verse</a>
+      <a href="/express">VEZE Express</a>
+    </div>
+  </nav>
+  <canvas id="blackhole"></canvas>
+  <script src="/static/js/blackhole.js"></script>
 
-```python
-import os, json, asyncio
-import redis.asyncio as redis
-from config.settings import settings
-
-r = redis.from_url(settings.REDIS_URL)
-
-async def emit_global(event_type: str, payload: dict):
-    await r.xadd("global.events", {"p": json.dumps({"type": event_type, "payload": payload})})
-
-async def subscribe_events():
-    group, consumer = "hub", "worker-1"
-    try: await r.xgroup_create("global.events", group, id="$", mkstream=True)
-    except Exception: pass
-    while True:
-        xs = await r.xreadgroup(group, consumer, {"global.events": ">"}, count=50, block=5000)
-        for _, msgs in xs or []:
-            for msg_id, data in msgs:
-                yield json.loads(data["p"])
-                await r.xack("global.events", group, msg_id)
-        await asyncio.sleep(0)
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
 ```
 
-# 🧵 streaming/hub\_worker.py (example integrator)
+### `app/ui/templates/index.html` (Landing)
 
-```python
-import asyncio
-from streaming.queues import emit_global
-
-async def main():
-    # demo heartbeat every 10s
-    while True:
-        await emit_global("hub.heartbeat", {"msg": "alive"})
-        await asyncio.sleep(10)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+```html
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>VEZEPyUniQVerse</h1>
+  <p>One account. All VEZE services. Across space & time.</p>
+  <div class="cta">
+    <a href="/helm" class="btn">Enter VEZE Helm</a>
+    <a href="/copilot" class="btn secondary">Ask VEZE Copilot</a>
+  </div>
+</section>
+{% endblock %}
 ```
 
----
+### `app/ui/templates/helm.html` (VEZE Helm)
 
-# 🧪 tests/test\_health.py
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Helm — Services</h2>
+<div class="grid">
+  {% for s in services %}
+  <a class="card" href="{{ s.url }}" target="_blank" rel="noopener">
+    <div class="icon">{{ s.icon }}</div>
+    <div class="title">{{ s.display }}</div>
+    <div class="desc">{{ s.description }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
+```
+
+### `app/ui/templates/copilot.html` (VEZE Copilot)
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Copilot — ASI Assistant</h2>
+<div id="chat">
+  <div id="log"></div>
+  <form id="send">
+    <input id="msg" placeholder="Ask about any VEZE service…"/>
+    <button type="submit">Send</button>
+  </form>
+</div>
+<script>
+const log = document.getElementById('log');
+const ws = new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws/copilot');
+ws.onmessage = (e)=>{ const m=JSON.parse(e.data); const p=document.createElement('p'); p.textContent = (m.role||'')+': '+m.text; log.appendChild(p); };
+document.getElementById('send').onsubmit = (ev)=>{ ev.preventDefault(); ws.send(document.getElementById('msg').value); document.getElementById('msg').value=''; };
+</script>
+{% endblock %}
+```
+
+### `app/ui/templates/verse.html` (About)
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Verse</h2>
+<p>Idyll-Intelligent-Systems · VEZE UniQVerse core team.</p>
+<ul>
+  <li>Vision: Unified Python-first super-app across domains.</li>
+  <li>Stack: FastAPI, Jinja2, Redis, Postgres, OTEL.</li>
+  <li>Domains: Web, Game, CGrow, Sports, Email, Social, and more…</li>
+</ul>
+{% endblock %}
+```
+
+### `app/ui/templates/express.html` (Social hub)
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Express — Social</h2>
+<ul class="links">
+  <li><a href="https://x.com" target="_blank" rel="noopener">X (Twitter)</a></li>
+  <li><a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a></li>
+  <li><a href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a></li>
+</ul>
+{% endblock %}
+```
+
+### `app/ui/static/css/theme.css`
+
+Use **pure CSS** to render starfield/nebula/black hole feel + “spaceship UI” nav.
+
+```css
+:root {
+  --bg1: radial-gradient(closest-side, rgba(0,0,0,0.9), rgba(0,0,0,0.98));
+  --nebula: radial-gradient(60% 80% at 20% 30%, rgba(120,0,200,.25), transparent),
+            radial-gradient(50% 70% at 80% 60%, rgba(0,180,255,.18), transparent);
+}
+html,body {height:100%; margin:0; color:#e8f0ff; font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;}
+.space-bg {background: var(--bg1), var(--nebula), #000; overflow:hidden;}
+#blackhole {position:fixed; inset:0; z-index:0;}
+.veze-nav{position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:14px 24px; backdrop-filter: blur(6px); background: rgba(10,10,20,.35); border-bottom: 1px solid rgba(255,255,255,.08);}
+.veze-nav a{color:#cfe8ff; text-decoration:none; margin:0 10px;}
+.brand{font-weight:700; letter-spacing:.5px}
+.content{position:relative; z-index:2; padding-top:96px; padding-bottom:48px; max-width:1100px; margin:0 auto; }
+.hero{display:flex; flex-direction:column; align-items:center; gap:16px; padding:80px 20px;}
+.hero h1{font-size:56px; margin:0;}
+.btn{padding:12px 18px; border-radius:14px; border:1px solid rgba(255,255,255,.2);}
+.btn.secondary{opacity:.8}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:20px;}
+.card{background:rgba(20,20,35,.5); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px; text-decoration:none; color:#e8f0ff; transition: transform .2s ease, background .2s;}
+.card:hover{transform: translateY(-4px); background: rgba(30,30,60,.55);}
+.icon{font-size:28px;}
+.links li{margin:8px 0;}
+```
+
+### `app/ui/static/js/blackhole.js`
+
+A tiny canvas particle warp (no frameworks). Keep it small.
+
+```javascript
+const c = document.getElementById('blackhole');
+const ctx = c.getContext('2d');
+let w,h, stars=[]; function rs(){w= c.width = innerWidth; h= c.height = innerHeight; stars = Array.from({length: Math.min(500, Math.floor(w*h/4000))},()=>({x:Math.random()*w, y:Math.random()*h, z:Math.random()*1+0.2}));}
+addEventListener('resize', rs); rs();
+function tick(t){
+  ctx.clearRect(0,0,w,h);
+  // subtle nebula glow
+  const g = ctx.createRadialGradient(w*0.5,h*0.5,10,w*0.5,h*0.5, Math.max(w,h)*0.6);
+  g.addColorStop(0,'rgba(0,0,0,0)');
+  g.addColorStop(1,'rgba(0,0,0,0.8)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  // black hole swirl
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate((t*0.00005)% (Math.PI*2));
+  ctx.beginPath(); for(let i=0;i<40;i++){ ctx.strokeStyle=`rgba(80,120,255,${0.03+i*0.002})`; ctx.arc(0,0, 40+i*6, 0, Math.PI*2); ctx.stroke(); }
+  ctx.restore();
+  // stars warp
+  ctx.fillStyle='rgba(200,230,255,0.9)';
+  for(const s of stars){
+    const dx = (w/2 - s.x), dy=(h/2 - s.y), d=Math.hypot(dx,dy);
+    const pull = 0.02/(1+d/400); s.x += dx*pull*s.z; s.y += dy*pull*s.z;
+    const twinkle = (Math.sin(t*0.002 + d*0.05)+1)/2;
+    ctx.globalAlpha = 0.4 + 0.6*twinkle;
+    ctx.fillRect(s.x, s.y, 1.2+s.z, 1.2+s.z);
+  }
+  ctx.globalAlpha=1.0; requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+```
+
+### `Dockerfile`
+
+```dockerfile
+FROM python:3.11-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+COPY pyproject.toml .
+RUN pip install --upgrade pip && pip install -e .
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000"]
+```
+
+### `tests/test_health.py`
 
 ```python
 from fastapi.testclient import TestClient
@@ -619,92 +409,35 @@ from app.main import app
 def test_health():
     c = TestClient(app)
     r = c.get("/health")
-    assert r.status_code == 200 and r.json()["status"] == "ok"
+    assert r.status_code == 200
+    assert r.json()["status"] == "ok"
 ```
 
----
+## 3) Behavior
 
-# 🐳 Dockerfile
+* **Landing (`/`)**: Black hole + nebula animated background; CTA buttons.
+* **VEZE Helm (`/helm`)**: Grid of service cards reading `config/services.json` (env overrides `VEZE_SERVICE_<NAME>`).
+* **VEZE Copilot (`/copilot`)**: Minimal chat UI using **WS `/ws/copilot`** (echo stub).
+* **VEZE Verse (`/verse`)**: About/team.
+* **VEZE Express (`/express`)**: Social links page.
+* **/metrics**: Prometheus metrics. **/health**: healthcheck.
 
-```dockerfile
-FROM python:3.11-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-WORKDIR /app
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
-USER appuser
-COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install -e .
-COPY . .
-EXPOSE 8000
-CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000"]
+## 4) Run
+
+```bash
+pip install -e .[dev]
+uvicorn app.main:app --reload
+# open http://localhost:8000
 ```
 
----
+## 5) Link services
 
-# 🔁 .github/workflows/ci.yml
+Set envs (optional):
 
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e .[dev]
-      - run: ruff check .
-      - run: mypy .
-      - run: pytest -q
-      - name: SBOM
-        run: pip install cyclonedx-bom && cyclonedx-py -o ops/sbom.json || true
+```bash
+export VEZE_SERVICE_GAME=https://your-game-host
+export VEZE_SERVICE_EMAIL=https://your-email-host
+# ...
 ```
 
----
-
-# 🧭 docs/adr-0001-architecture.md (short)
-
-```markdown
-# ADR-0001: UniQVerse Hub Architecture
-We adopt FastAPI as the global hub with:
-- REST + GraphQL façade, OIDC to be enabled, Redis Streams for global events.
-- Postgres for identity/entitlements/devices, service registry via env config.
-- Downstream services proxied via HTTP; future mTLS and service discovery planned.
-```
-
----
-
-# 📓 ops/runbook.md (essentials)
-
-* **Dev up**
-
-  ```bash
-  pip install -e .[dev]
-  uvicorn app.main:app --reload
-  ```
-* **DB**
-
-  ```bash
-  alembic upgrade head
-  ```
-* **Global events worker**
-
-  ```bash
-  python streaming/hub_worker.py
-  ```
-* **Smoke**
-
-  * `GET /health`
-  * `GET /hub/services`
-  * `GET /hub/entitlements` (empty until you seed)
-  * Connect WS: `ws://localhost:8000/hub/events` → see `hub.heartbeat` every 10s
-  * GraphQL: POST `/graphql` with `{ services { name status } }`
-* **Next**
-
-  * Plug OIDC in `app/auth.py` (Authlib) and enforce `Depends(get_current_user)`.
-  * Point `SVC_*` env vars at your running VEZE services.
-  * Add per-service entitlements & cross-service push notifications.
-
----
+**End of instructions. Generate every file above exactly at the specified paths, then show me a short “Done” summary.**

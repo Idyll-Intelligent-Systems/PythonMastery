@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  uniqverse:
+    build:
+      context: ./VEZEPyUniQVerse
+    container_name: veze_uniqverse
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      game:
+        condition: service_started
+      email:
+        condition: service_started
+
+  game:
+    build:
+      context: ./VEZEPyGame
+    container_name: veze_game
+    ports:
+      - "8002:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  email:
+    build:
+      context: ./VEZEPyEmail
+    container_name: veze_email
+    ports:
+      - "8004:8000"   # HTTP API/UI
+      - "2525:25"     # SMTP (dev-friendly high port)
+      - "2587:587"    # SMTP Submission (dev)
+      - "2465:465"    # SMTPS (dev)
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+networks:
+  default:
+    name: veze-net

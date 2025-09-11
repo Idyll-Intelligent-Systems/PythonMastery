@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>VEZEPyUniQVerse</title>
+  <link rel="stylesheet" href="/static/css/theme.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body class="space-bg">
+  <canvas id="blackhole"></canvas>
+  <nav class="veze-nav">
+    <div class="brand"><a href="/">VEZE UniQVerse</a></div>
+    <div class="links">
+      <a href="/helm">Helm</a>
+      <a href="/copilot">Copilot</a>
+      <a href="/verse">Verse</a>
+      <a href="/express">Express</a>
+    </div>
+  </nav>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/js/blackhole.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Copilot — ASI Assistant</h2>
+<div id="chat">
+  <div id="log" class="chat-log"></div>
+  <form id="send" class="chat-form">
+    <input id="msg" type="text" placeholder="Type a message…" autocomplete="off" />
+    <button class="btn" type="submit">Send</button>
+  </form>
+  
+</div>
+<script>
+const log = document.getElementById('log');
+const ws = new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws/copilot');
+ws.onmessage = (e)=>{ const m=JSON.parse(e.data); const p=document.createElement('p'); p.textContent = (m.role||'')+': '+m.text; log.appendChild(p); log.scrollTop = log.scrollHeight; };
+document.getElementById('send').onsubmit = (ev)=>{ ev.preventDefault(); if(!ws || ws.readyState!==1) return; const v=document.getElementById('msg').value; if(!v) return; const p=document.createElement('p'); p.textContent = 'you: '+v; p.className='you'; log.appendChild(p); ws.send(v); document.getElementById('msg').value=''; };
+</script>
+{% endblock %}

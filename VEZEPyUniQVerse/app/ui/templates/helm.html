@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>VEZE Helm — Services</h2>
+<div class="grid">
+  {% for s in services %}
+  <a class="card" href="{{ s.url }}" target="_blank" rel="noopener">
+    <div class="icon">{{ s.icon or "🧭" }}</div>
+    <div class="title">{{ s.display or s.name }}</div>
+    <div class="desc">{{ s.description or '' }}</div>
+  </a>
+  {% endfor %}
+  {% if services|length == 0 %}
+  <div class="card">
+    <div class="title">No services configured</div>
+    <div class="desc">Add entries to config/services.json</div>
+  </div>
+  {% endif %}
+  
+</div>
+{% endblock %}

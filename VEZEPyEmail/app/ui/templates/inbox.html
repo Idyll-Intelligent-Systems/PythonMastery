@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Inbox</h1>
+<ul>
+  {% set messages = messages or [] %}
+  {% for m in messages %}
+    <li><b>{{m.subject}}</b> — {{m.from}} <small>{{m.date}}</small></li>
+  {% endfor %}
+  {% if not messages %}
+    <li>Empty inbox</li>
+  {% endif %}
+</ul>
+{% endblock %}

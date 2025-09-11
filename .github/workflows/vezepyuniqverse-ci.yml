@@ -1,0 +1,41 @@
+name: VEZEPyUniQVerse CI
+
+on:
+  push:
+    paths:
+      - 'VEZEPyUniQVerse/**'
+      - '.github/workflows/vezepyuniqverse-ci.yml'
+  pull_request:
+    paths:
+      - 'VEZEPyUniQVerse/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        working-directory: VEZEPyUniQVerse
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          python -m pip install websockets uvicorn
+      - name: Lint (ruff --fix)
+        working-directory: VEZEPyUniQVerse
+        run: |
+          python -m ruff check --fix app tests
+          # Re-run to ensure clean after fixes
+          python -m ruff check app tests
+      - name: Typecheck (mypy)
+        working-directory: VEZEPyUniQVerse
+        run: |
+          python -m mypy --install-types --non-interactive app
+      - name: Tests
+        working-directory: VEZEPyUniQVerse
+        run: |
+          pytest -q

@@ -158,6 +158,24 @@ uvicorn app.main:app --reload
 
 Open: [http://localhost:8000](http://localhost:8000)
 
+## Run all services together
+
+Choose one of the following approaches:
+
+- Docker Compose (recommended)
+    - Build and start: `docker compose up --build`
+    - Services:
+        - UniQVerse: [http://localhost:8000](http://localhost:8000)
+        - Game: [http://localhost:8002](http://localhost:8002)
+        - Email: [http://localhost:8004](http://localhost:8004)
+    - SMTP dev ports (Email): 2525, 2587, 2465
+
+- Procfile (local, requires foreman/honcho)
+    - Install a runner (example): `pip install honcho`
+    - Start: `honcho start`
+    - Endpoints are the same as above.
+
+The UniQVerse Helm page will link to the Game and Email services automatically.
 ````
 
 ---

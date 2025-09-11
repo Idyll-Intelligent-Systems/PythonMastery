@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  uniqverse:
+    build:
+      args:
+        - PIP_NO_CACHE_DIR=1
+    command: ["python","-m","uvicorn","app.main:app","--reload","--host","0.0.0.0","--port","8000","--log-level","warning"]
+    volumes:
+      - ./VEZEPyUniQVerse/app:/app/app
+      - ./VEZEPyUniQVerse/config:/app/config
+  game:
+    build:
+      args:
+        - PIP_NO_CACHE_DIR=1
+    command: ["python","-m","uvicorn","app.main:app","--reload","--host","0.0.0.0","--port","8000","--log-level","warning"]
+    volumes:
+      - ./VEZEPyGame:/app
+  email:
+    build:
+      args:
+        - PIP_NO_CACHE_DIR=1
+    command: ["python","-m","uvicorn","app.main:app","--reload","--host","0.0.0.0","--port","8000","--log-level","warning"]
+    volumes:
+      - ./VEZEPyEmail:/app
