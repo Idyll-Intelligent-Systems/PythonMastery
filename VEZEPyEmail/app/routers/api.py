@@ -1,8 +1,16 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Dict
 from pydantic import BaseModel
-from db.repository import get_mailbox_id_for_user, list_messages_for_mailbox, mark_read
+from db.repository import (
+    get_mailbox_id_for_user,
+    list_messages_for_mailbox,
+    mark_read,
+    toggle_star,
+    set_labels,
+)
 from db.database import get_session
+from fastapi.responses import StreamingResponse
+import asyncio
 from app.security import require_scopes
 
 router = APIRouter()
@@ -91,6 +99,36 @@ async def set_read(
 ):
     await mark_read(session, message_id)
     return {"ok": True}
+
+
+@router.post("/messages/{message_id}/star")
+async def star_message(
+    message_id: int,
+    _=Depends(auth_user),
+    session=Depends(get_session),
+):
+    return await toggle_star(session, message_id)
+
+
+@router.post("/messages/{message_id}/labels")
+async def update_labels(
+    message_id: int,
+    labels: List[str],
+    _=Depends(auth_user),
+    session=Depends(get_session),
+):
+    return await set_labels(session, message_id, labels)
+
+
+@router.get("/events")
+async def sse_events(_=Depends(auth_user)):
+    async def event_stream():
+        # Simple heartbeat for now; replace with Redis pubsub or DB triggers
+        while True:
+            yield f"data: {{\"type\": \"heartbeat\", \"ts\": \"{asyncio.get_event_loop().time()}\"}}\n\n"
+            await asyncio.sleep(15)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.get("/health")

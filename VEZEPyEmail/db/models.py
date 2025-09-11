@@ -20,6 +20,7 @@ class Message(Base):
     subject: Mapped[str] = mapped_column(String(512))
     from_addr: Mapped[str] = mapped_column(String(255))
     snippet: Mapped[str] = mapped_column(Text, default="")
+    labels: Mapped[str] = mapped_column(String(255), default="")  # comma-separated labels
     date: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
     flags: Mapped[str] = mapped_column(String(255), default="")  # comma-separated flags (e.g., "Seen,Starred")
     size: Mapped[int] = mapped_column(Integer, default=0)

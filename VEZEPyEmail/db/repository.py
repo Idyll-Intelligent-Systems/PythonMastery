@@ -70,3 +70,52 @@ async def mark_read(session: AsyncSession, message_id: int) -> None:
         flags.append("Seen")
         msg.flags = ",".join(flags)
         await session.flush()
+
+
+async def create_message(
+    session: AsyncSession,
+    mailbox_id: int,
+    subject: str,
+    from_addr: str,
+    snippet: str = "",
+    flags: Optional[list[str]] = None,
+    labels: Optional[list[str]] = None,
+) -> int:
+    msg = Message(
+        mailbox_id=mailbox_id,
+        subject=subject,
+        from_addr=from_addr,
+        snippet=snippet,
+        flags=",".join(flags or []),
+        labels=",".join(labels or []),
+    )
+    session.add(msg)
+    await session.flush()
+    return msg.id
+
+
+async def toggle_star(session: AsyncSession, message_id: int) -> dict:
+    res = await session.execute(select(Message).where(Message.id == message_id))
+    msg = res.scalars().first()
+    if not msg:
+        return {"ok": False}
+    flags = [p for p in (msg.flags or "").split(",") if p]
+    if "Starred" in flags:
+        flags = [f for f in flags if f != "Starred"]
+        starred = False
+    else:
+        flags.append("Starred")
+        starred = True
+    msg.flags = ",".join(flags)
+    await session.flush()
+    return {"ok": True, "starred": starred}
+
+
+async def set_labels(session: AsyncSession, message_id: int, labels: list[str]) -> dict:
+    res = await session.execute(select(Message).where(Message.id == message_id))
+    msg = res.scalars().first()
+    if not msg:
+        return {"ok": False}
+    msg.labels = ",".join(labels)
+    await session.flush()
+    return {"ok": True}

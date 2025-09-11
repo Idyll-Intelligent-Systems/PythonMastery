@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,39 +18,8 @@ except Exception:
 app.mount("/static", StaticFiles(directory="app/ui/static"), name="static")
 
 
-def _sample_messages():
-    return [
-        {
-            "id": 1,
-            "from": "alice@example.com",
-            "subject": "Welcome to VEZEPyEmail",
-            "snippet": "Thanks for trying the demo inbox.",
-            "date": "2025-09-11 10:05",
-            "labels": ["Inbox"],
-            "unread": True,
-            "starred": False,
-        },
-        {
-            "id": 2,
-            "from": "noreply@game.example",
-            "subject": "Your daily rewards",
-            "snippet": "Claim your coins and boosts.",
-            "date": "2025-09-11 09:00",
-            "labels": ["Promotions"],
-            "unread": False,
-            "starred": True,
-        },
-        {
-            "id": 3,
-            "from": "bob@example.com",
-            "subject": "Lunch tomorrow?",
-            "snippet": "Let me know what works.",
-            "date": "2025-09-10 17:42",
-            "labels": ["Inbox"],
-            "unread": False,
-            "starred": False,
-        },
-    ]
+from db.database import get_session
+from db.repository import get_or_create_mailbox, list_messages_for_mailbox, mark_read
 if jmap is not None:
     app.include_router(jmap.router, tags=["jmap"])
 app.include_router(ws.router, tags=["ws"])
@@ -58,17 +27,30 @@ app.include_router(email_api.router, prefix="/api", tags=["api"])
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("inbox.html", {"request": request, "messages": _sample_messages()})
+async def index(request: Request, session=Depends(get_session)):
+    user = request.query_params.get("user") or "demo@vezeuniqverse.com"
+    mbox = await get_or_create_mailbox(session, user)
+    msgs = await list_messages_for_mailbox(session, mbox.id, limit=50)
+    return templates.TemplateResponse("inbox.html", {"request": request, "messages": msgs})
 
 @app.get("/ui/inbox", response_class=HTMLResponse)
-async def ui_inbox(request: Request):
-    return templates.TemplateResponse("inbox.html", {"request": request, "messages": _sample_messages()})
+async def ui_inbox(request: Request, session=Depends(get_session)):
+    user = request.query_params.get("user") or "demo@vezeuniqverse.com"
+    q = request.query_params.get("q")
+    offset = int(request.query_params.get("offset") or 0)
+    mbox = await get_or_create_mailbox(session, user)
+    msgs = await list_messages_for_mailbox(session, mbox.id, limit=50, offset=offset, q=q)
+    return templates.TemplateResponse("inbox.html", {"request": request, "messages": msgs})
 
 
 @app.get("/ui/message/{msg_id}", response_class=HTMLResponse)
-async def ui_message(request: Request, msg_id: int):
-    msgs = _sample_messages()
+async def ui_message(request: Request, msg_id: int, session=Depends(get_session)):
+    # mark unread on open
+    await mark_read(session, msg_id)
+    # simple load from current inbox slice for render context
+    user = request.query_params.get("user") or "demo@vezeuniqverse.com"
+    mbox = await get_or_create_mailbox(session, user)
+    msgs = await list_messages_for_mailbox(session, mbox.id, limit=50)
     msg = next((m for m in msgs if m["id"] == msg_id), None)
     return templates.TemplateResponse("message.html", {"request": request, "message": msg})
 

@@ -3,7 +3,12 @@
 <div class="app">
   <div class="topbar">
     <div class="brand">✉️ VEZEPyEmail</div>
-    <div class="search"><input placeholder="Search mail" /></div>
+    <div class="search">
+      <form method="get" action="/ui/inbox">
+        <input name="q" value="{{ request.query_params.get('q') or '' }}" placeholder="Search mail" />
+        <button class="btn secondary" type="submit">Search</button>
+      </form>
+    </div>
     <div class="actions">
       <button class="btn secondary">Refresh</button>
       <button class="btn">Compose</button>
@@ -23,8 +28,8 @@
     </aside>
     <section class="list">
       {% set messages = messages or [] %}
-      {% for m in messages %}
-      <a class="thread" href="/ui/message/{{m.id}}">
+    {% for m in messages %}
+    <a class="thread" href="/ui/message/{{m.id}}">
         <div class="avatar"></div>
         <div class="meta">
           <div class="row1"><span class="from">{{m.from}}</span><span class="date">{{m.date}}</span></div>
@@ -32,7 +37,7 @@
           <div class="snippet">{{m.snippet}}</div>
         </div>
         <div class="labels">
-          {% for l in m.labels %}<span class="pill">{{l}}</span>{% endfor %}
+      {% for l in m.labels %}<span class="pill">{{l}}</span>{% endfor %}
         </div>
       </a>
       {% endfor %}
@@ -46,6 +51,15 @@
       <div class="msg-head"><div>Preview</div><div class="msg-tools"><button class="btn secondary">Archive</button><button class="btn secondary">Delete</button></div></div>
       <div class="msg-body">Select a message to read.</div>
     </section>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 16px;">
+    {% set prev_offset = (request.query_params.get('offset')|int(default=0)) - 50 %}
+    {% set next_offset = (request.query_params.get('offset')|int(default=0)) + 50 %}
+    {% set q = request.query_params.get('q') %}
+    {% if prev_offset >= 0 %}
+    <a class="btn secondary" href="/ui/inbox?offset={{prev_offset}}{{'&q=' + q if q else ''}}">Prev</a>
+    {% endif %}
+    <a class="btn secondary" href="/ui/inbox?offset={{next_offset}}{{'&q=' + q if q else ''}}">Next</a>
   </div>
 </div>
 {% endblock %}
