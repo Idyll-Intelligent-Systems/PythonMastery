@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from typing import List, Optional, Dict, Any
 from fastapi import Header, HTTPException
-from authlib.jose import JsonWebToken
+from authlib.jose import JsonWebToken, JsonWebKey
 
 
 def _fail(detail: str, code: int = 401):
@@ -30,18 +30,28 @@ def _verify_jwt(token: str) -> Dict[str, Any]:
             "scope": "email.read game.read_mail",
         }
 
-    secret = os.getenv("VEZE_JWT_SECRET")
-    if not secret:
-        _fail("JWT secret not configured (VEZE_JWT_SECRET)")
     iss = os.getenv("VEZE_JWT_ISS", "https://auth.local/")
     aud = os.getenv("VEZE_EMAIL_AUD", "veze-email")
+    jwks_url = os.getenv("VEZE_JWKS_URL")
+    hs_secret = os.getenv("VEZE_JWT_SECRET")
 
-    jwt = JsonWebToken(["HS256"])  # symmetric demo
-    try:
-        claims = jwt.decode(token, secret)
-        claims.validate()
-    except Exception as e:
-        _fail(f"Invalid token: {e}")
+    if jwks_url:
+        jwt = JsonWebToken(["RS256"])  # asymmetric
+        try:
+            jwks = JsonWebKey.import_key_set_from_url(jwks_url)
+            claims = jwt.decode(token, jwks)
+            claims.validate()
+        except Exception as e:
+            _fail(f"Invalid token: {e}")
+    elif hs_secret:
+        jwt = JsonWebToken(["HS256"])  # symmetric fallback for dev
+        try:
+            claims = jwt.decode(token, hs_secret)
+            claims.validate()
+        except Exception as e:
+            _fail(f"Invalid token: {e}")
+    else:
+        _fail("No JWKS or HS256 secret configured for JWT validation")
 
     if claims.get("iss") != iss:
         _fail("Invalid issuer", 403)

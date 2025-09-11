@@ -1,53 +1,72 @@
 from __future__ import annotations
-from typing import List, Dict
-
-# In-memory seed to simulate DB-backed JMAP
-_MAILBOXES = {
-    # user -> mailbox id
-}
-
-_MESSAGES: Dict[int, List[Dict]] = {}
+from typing import List, Dict, Optional
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from db.models import Mailbox, Message
 
 
-def _seed_user(user: str) -> int:
-    if user not in _MAILBOXES:
-        mbox_id = len(_MAILBOXES) + 1
-        _MAILBOXES[user] = mbox_id
-        _MESSAGES[mbox_id] = [
-            {
-                "id": mbox_id * 1000 + 1,
-                "mailbox_id": mbox_id,
-                "subject": "Welcome to VEZEPyUniQVerse",
-                "from": "noreply@vezeuniqverse.com",
-                "date": "2025-09-11T10:05:00Z",
-                "flags": [],
-                "size": 1234,
-                "spam_score": 0.01,
-                "snippet": "You're all set. Explore the world and check your quests!",
-            },
-            {
-                "id": mbox_id * 1000 + 2,
-                "mailbox_id": mbox_id,
-                "subject": "Daily Reward Available",
-                "from": "rewards@vezeuniqverse.com",
-                "date": "2025-09-11T09:00:00Z",
-                "flags": ["Seen"],
-                "size": 1111,
-                "spam_score": 0.02,
-                "snippet": "Claim your shards and XP boost for today.",
-            },
-        ]
-    return _MAILBOXES[user]
+async def get_or_create_mailbox(session: AsyncSession, user: str) -> Mailbox:
+    res = await session.execute(select(Mailbox).where(Mailbox.user_email == user))
+    mbox = res.scalars().first()
+    if mbox:
+        return mbox
+    mbox = Mailbox(user_email=user, name="INBOX")
+    session.add(mbox)
+    await session.flush()
+    return mbox
 
 
-async def get_mailbox_id_for_user(user: str) -> int:
-    return _seed_user(user)
+async def get_mailbox_id_for_user(user: str, session: AsyncSession | None = None) -> int:
+    assert session is not None, "session is required"
+    mbox = await get_or_create_mailbox(session, user)
+    return mbox.id
 
 
-async def list_messages_for_mailbox(mailbox_id: int, limit: int = 50) -> List[Dict]:
-    msgs = _MESSAGES.get(mailbox_id, [])
-    msgs = sorted(msgs, key=lambda m: m["id"], reverse=True)[:limit]
-    # Derive unread flag
+def _unread_from_flags(flags: str) -> bool:
+    parts = [p.strip() for p in (flags or "").split(",") if p.strip()]
+    return "Seen" not in parts
+
+
+async def list_messages_for_mailbox(
+    session: AsyncSession,
+    mailbox_id: int,
+    limit: int = 50,
+    offset: int = 0,
+    q: Optional[str] = None,
+) -> List[Dict]:
+    stmt = select(Message).where(Message.mailbox_id == mailbox_id)
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where((Message.subject.ilike(like)) | (Message.from_addr.ilike(like)))
+    stmt = stmt.order_by(Message.id.desc()).limit(limit).offset(offset)
+    res = await session.execute(stmt)
+    msgs = res.scalars().all()
+    out: List[Dict] = []
     for m in msgs:
-        m["unread"] = "Seen" not in m.get("flags", [])
-    return msgs
+        out.append(
+            {
+                "id": m.id,
+                "mailbox_id": m.mailbox_id,
+                "subject": m.subject,
+                "from": m.from_addr,
+                "date": (m.date.isoformat() if hasattr(m.date, "isoformat") else str(m.date)),
+                "flags": [p for p in (m.flags or "").split(",") if p],
+                "size": m.size,
+                "spam_score": m.spam_score,
+                "snippet": m.snippet or "",
+                "unread": _unread_from_flags(m.flags or ""),
+            }
+        )
+    return out
+
+
+async def mark_read(session: AsyncSession, message_id: int) -> None:
+    res = await session.execute(select(Message).where(Message.id == message_id))
+    msg = res.scalars().first()
+    if not msg:
+        return
+    flags = [p for p in (msg.flags or "").split(",") if p]
+    if "Seen" not in flags:
+        flags.append("Seen")
+        msg.flags = ",".join(flags)
+        await session.flush()

@@ -15,6 +15,16 @@
   <main class="layout">
     <section class="world">
       <canvas id="world" width="960" height="540"></canvas>
+      <div id="hover-preview" style="position:absolute;display:none;background:#111827;color:#e5e7eb;border:1px solid #1f2937;border-radius:6px;padding:8px;font-size:12px;max-width:320px"></div>
+      <div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
+        <div style="background:#0f1624;border:1px solid #1f2937;border-radius:8px;max-width:600px;width:90%;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 id="modal-title" style="margin:0"></h3>
+            <button id="modal-close" class="btn secondary">Close</button>
+          </div>
+          <div id="modal-body" style="color:#cbd5e1;"></div>
+        </div>
+      </div>
     </section>
     <aside class="sidebar">
       <div class="panel">
@@ -64,16 +74,42 @@
         list.innerHTML = `<li style="color:#f88">${String(err)}</li>`;
       }
     }
+    const hover = document.getElementById('hover-preview');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalClose = document.getElementById('modal-close');
+    modalClose.addEventListener('click', ()=> modal.style.display='none');
+
     async function render(listData){
       const items = (listData.messages||[]).map(m=>{
         const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
         const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;
-        return `<li>${unread}<a href=\"${emailUrl}\" target=\"_blank\" style=\"color:#93c5fd;text-decoration:none\"><strong>${m.subject}</strong></a><br/><span style=\"color:#9aa\">${m.snippet||''}</span></li>`;
+        return `<li class=\"mail-item\" data-id=\"${m.id}\" data-subj=\"${m.subject.replaceAll('"','&quot;')}\" data-snippet=\"${(m.snippet||'').replaceAll('"','&quot;')}\">${unread}<a href=\"${emailUrl}\" target=\"_blank\" style=\"color:#93c5fd;text-decoration:none\"><strong>${m.subject}</strong></a><br/><span style=\"color:#9aa\">${m.snippet||''}</span></li>`;
       }).join('');
       list.innerHTML = items || '<li>No messages</li>';
       const unreadCount = (listData.messages||[]).filter(m=>m.unread).length;
       const badge = document.getElementById('mail-unread');
       if(badge) badge.textContent = unreadCount;
+
+      // Hover preview on list items
+      list.querySelectorAll('.mail-item').forEach(li=>{
+        li.addEventListener('mouseenter', (e)=>{
+          const rect = e.target.getBoundingClientRect();
+          hover.style.left = (rect.right + 10) + 'px';
+          hover.style.top = rect.top + 'px';
+          hover.innerHTML = `<strong>${li.dataset.subj}</strong><div style="color:#9aa">${li.dataset.snippet||''}</div>`;
+          hover.style.display = 'block';
+        });
+        li.addEventListener('mouseleave', ()=> hover.style.display = 'none');
+        li.addEventListener('click', (e)=>{
+          if(e.metaKey||e.ctrlKey) return; // allow open in new tab
+          e.preventDefault();
+          modalTitle.textContent = li.dataset.subj || '';
+          modalBody.textContent = li.dataset.snippet || '';
+          modal.style.display = 'flex';
+        });
+      });
     }
 
     async function load(){

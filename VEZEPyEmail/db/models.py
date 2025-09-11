@@ -1,17 +1,29 @@
-class Mailbox:
-    def __init__(self, id: int, user_id: int, name: str):
-        self.id = id
-        self.user_id = user_id
-        self.name = name
+from __future__ import annotations
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer, DateTime, ForeignKey, Text, Index, Float, UniqueConstraint
+from sqlalchemy.sql import func
+from db.base import Base
 
 
-class Message:
-    def __init__(self, id: int, mailbox_id: int, subject: str, from_addr: str, date: str, flags: list[str], size: int, spam_score: float):
-        self.id = id
-        self.mailbox_id = mailbox_id
-        self.subject = subject
-        self.from_addr = from_addr
-        self.date = date
-        self.flags = flags
-        self.size = size
-        self.spam_score = spam_score
+class Mailbox(Base):
+    __tablename__ = "mailboxes"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_email: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str] = mapped_column(String(64), default="INBOX")
+    __table_args__ = (UniqueConstraint("user_email", "name", name="uq_mailbox_user_name"),)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    mailbox_id: Mapped[int] = mapped_column(ForeignKey("mailboxes.id"), index=True)
+    subject: Mapped[str] = mapped_column(String(512))
+    from_addr: Mapped[str] = mapped_column(String(255))
+    snippet: Mapped[str] = mapped_column(Text, default="")
+    date: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
+    flags: Mapped[str] = mapped_column(String(255), default="")  # comma-separated flags (e.g., "Seen,Starred")
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    spam_score: Mapped[float] = mapped_column(Float, default=0.0)
+
+Index("ix_messages_subject", Message.subject)
+Index("ix_messages_from", Message.from_addr)

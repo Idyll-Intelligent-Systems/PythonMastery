@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Dict
 from pydantic import BaseModel
-from db.repository import get_mailbox_id_for_user, list_messages_for_mailbox
+from db.repository import get_mailbox_id_for_user, list_messages_for_mailbox, mark_read
+from db.database import get_session
 from app.security import require_scopes
 
 router = APIRouter()
@@ -50,15 +51,19 @@ def _sample_messages(user: str) -> List[Dict]:
 @router.get("/messages")
 async def list_messages(
     user: str = Query(..., description="User email, must be @vezeuniqverse.com"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    q: str | None = Query(None, description="Search subject/from contains"),
     _=Depends(auth_user),
+    session=Depends(get_session),
 ):
     if "@" not in user:
         raise HTTPException(status_code=400, detail="Invalid email")
     local, domain = user.split("@", 1)
     if domain.lower() != "vezeuniqverse.com":
         raise HTTPException(status_code=403, detail="Unsupported domain")
-    mailbox_id = await get_mailbox_id_for_user(user)
-    msgs = await list_messages_for_mailbox(mailbox_id)
+    mailbox_id = await get_mailbox_id_for_user(user, session)
+    msgs = await list_messages_for_mailbox(session, mailbox_id, limit=limit, offset=offset, q=q)
     # Transform field name 'from' -> 'from_'
     output = [
         MessageOut(
@@ -76,6 +81,16 @@ async def list_messages(
         for m in msgs
     ]
     return {"user": user, "messages": output}
+
+
+@router.post("/messages/{message_id}/read")
+async def set_read(
+    message_id: int,
+    _=Depends(auth_user),
+    session=Depends(get_session),
+):
+    await mark_read(session, message_id)
+    return {"ok": True}
 
 
 @router.get("/health")
