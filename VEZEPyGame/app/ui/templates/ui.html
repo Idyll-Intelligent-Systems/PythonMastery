@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="/static/css/game.css" />
+{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="topbar">
+    <div class="brand">VEZEPyGame</div>
+    <nav class="nav">
+      <a href="/ui">World</a>
+      <a href="/leaderboards">Leaderboards</a>
+      <a href="/inventory">Inventory</a>
+    </nav>
+  </header>
+  <main class="layout">
+    <section class="world">
+      <canvas id="world" width="960" height="540"></canvas>
+    </section>
+    <aside class="sidebar">
+      <div class="panel">
+        <h3>Player</h3>
+        <div id="player-stats"></div>
+      </div>
+      <div class="panel">
+        <h3>Quests</h3>
+        <ul id="quests"></ul>
+      </div>
+    </aside>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/game.js"></script>
+{% endblock %}

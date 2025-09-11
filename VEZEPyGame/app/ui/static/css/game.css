@@ -1,0 +1,10 @@
+body{margin:0;background:#0b0e14;color:#e6e6e6;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#111827;border-bottom:1px solid #1f2937}
+.topbar .brand{font-weight:700}
+.topbar .nav a{color:#a1a1aa;margin-right:12px;text-decoration:none}
+.topbar .nav a:hover{color:#fff}
+.layout{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px}
+.world{background:#05070d;border:1px solid #1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.panel{background:#0f1624;border:1px solid #1f2937;border-radius:8px;padding:12px}
+#world{width:100%;height:auto;border-radius:8px}

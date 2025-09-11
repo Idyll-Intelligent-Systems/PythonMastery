@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from app.routers import public, ws
 from services.matchmaking.api import router as mm_router
 from services.leaderboards.api import router as lb_router
@@ -14,6 +15,7 @@ try:
     templates.env.auto_reload = True
 except Exception:
     pass
+app.mount("/static", StaticFiles(directory="app/ui/static"), name="static")
 app.include_router(public.router, tags=["public"])
 app.include_router(ws.router, tags=["ws"])
 app.include_router(mm_router, prefix="/matchmaking", tags=["matchmaking"])
@@ -25,11 +27,11 @@ app.include_router(ml_router, prefix="/ml", tags=["ml"])
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("base.html", {"request": request})
+    return templates.TemplateResponse("ui.html", {"request": request})
 
 @app.get("/ui", response_class=HTMLResponse)
 def ui_home(request: Request):
-    return templates.TemplateResponse("base.html", {"request": request})
+    return templates.TemplateResponse("ui.html", {"request": request})
 
 @app.get("/health")
 def health():

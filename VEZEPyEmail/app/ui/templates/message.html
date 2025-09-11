@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="app">
+  <div class="topbar">
+    <div class="brand">✉️ VEZEPyEmail</div>
+    <div class="search"><input placeholder="Search mail" /></div>
+    <div class="actions">
+      <a class="btn secondary" href="/ui/inbox">Back</a>
+      <button class="btn">Reply</button>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:260px 1fr;">
+    <aside class="sidebar">
+      <div class="compose"><a class="btn" href="/ui/inbox">Inbox</a></div>
+      <nav class="folders">
+        <a class="folder active" href="/ui/inbox">Inbox</a>
+        <a class="folder" href="#">Starred</a>
+      </nav>
+    </aside>
+    <section class="detail">
+      {% if message %}
+      <h2>{{message.subject}}</h2>
+      <div class="pill">From: {{message.from}}</div>
+      <p style="margin-top:12px;">{{message.snippet}} — full message body would render here.</p>
+      {% else %}
+      <p>Message not found.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

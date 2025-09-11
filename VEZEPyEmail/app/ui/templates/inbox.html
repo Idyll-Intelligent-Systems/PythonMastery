@@ -1,13 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Inbox</h1>
-<ul>
-  {% set messages = messages or [] %}
-  {% for m in messages %}
-    <li><b>{{m.subject}}</b> — {{m.from}} <small>{{m.date}}</small></li>
-  {% endfor %}
-  {% if not messages %}
-    <li>Empty inbox</li>
-  {% endif %}
-</ul>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">✉️ VEZEPyEmail</div>
+    <div class="search"><input placeholder="Search mail" /></div>
+    <div class="actions">
+      <button class="btn secondary">Refresh</button>
+      <button class="btn">Compose</button>
+    </div>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="compose"><button class="btn">+ Compose</button></div>
+      <nav class="folders">
+        <a class="folder active" href="#">Inbox</a>
+        <a class="folder" href="#">Starred</a>
+        <a class="folder" href="#">Sent</a>
+        <a class="folder" href="#">Drafts</a>
+        <a class="folder" href="#">Spam</a>
+        <a class="folder" href="#">Trash</a>
+      </nav>
+    </aside>
+    <section class="list">
+      {% set messages = messages or [] %}
+      {% for m in messages %}
+      <a class="thread" href="/ui/message/{{m.id}}">
+        <div class="avatar"></div>
+        <div class="meta">
+          <div class="row1"><span class="from">{{m.from}}</span><span class="date">{{m.date}}</span></div>
+          <div class="subj">{{m.subject}}</div>
+          <div class="snippet">{{m.snippet}}</div>
+        </div>
+        <div class="labels">
+          {% for l in m.labels %}<span class="pill">{{l}}</span>{% endfor %}
+        </div>
+      </a>
+      {% endfor %}
+      {% if not messages %}
+      <div class="thread">
+        <div class="meta">Your inbox is empty</div>
+      </div>
+      {% endif %}
+    </section>
+    <section class="detail">
+      <div class="msg-head"><div>Preview</div><div class="msg-tools"><button class="btn secondary">Archive</button><button class="btn secondary">Delete</button></div></div>
+      <div class="msg-body">Select a message to read.</div>
+    </section>
+  </div>
+</div>
 {% endblock %}

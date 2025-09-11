@@ -1,0 +1,31 @@
+:root{--bg:#0f1115;--panel:#151926;--panel2:#0f1320;--text:#e6eaf2;--muted:#9aa3b2;--accent:#4f8cff;--accent2:#7c4dff;--danger:#ff4f6d;--success:#2ecc71}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:linear-gradient(180deg,#0f1115,#0c101b);color:var(--text);font:14px/1.4 Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.app{display:grid;grid-template-rows:56px 1fr}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid #1e2435}
+.brand{font-weight:700;letter-spacing:.3px}
+.search{flex:1;display:flex}
+.search input{width:100%;background:#0b0f1a;color:var(--text);border:1px solid #1c2335;border-radius:8px;padding:8px 12px}
+.actions{display:flex;gap:8px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer}
+.btn.secondary{background:#20263a;color:var(--text)}
+.layout{display:grid;grid-template-columns:260px 420px 1fr;gap:0;height:calc(100vh - 56px)}
+.sidebar{background:var(--panel2);border-right:1px solid #1e2435;padding:12px}
+.compose{margin-bottom:10px}
+.folders{display:flex;flex-direction:column;gap:6px}
+.folder{padding:8px 10px;border-radius:8px;color:var(--text)}
+.folder.active,.folder:hover{background:#1a2033}
+.list{background:var(--panel);border-right:1px solid #1e2435;overflow:auto}
+.thread{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid #1c2335;cursor:pointer}
+.thread:hover{background:#1a2033}
+.avatar{width:32px;height:32px;border-radius:50%;background:#2a3250}
+.meta{flex:1}
+.row1{display:flex;justify-content:space-between}
+.from{font-weight:600}
+.date{color:var(--muted)}
+.subj{margin:4px 0;font-weight:600}
+.snippet{color:var(--muted)}
+.detail{padding:16px;overflow:auto}
+.msg-head{display:flex;justify-content:space-between;margin-bottom:12px}
+.msg-tools{display:flex;gap:8px}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#222a44;color:var(--muted);font-size:12px}
