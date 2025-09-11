@@ -1,5 +1,3 @@
----
-
 #VEZEPyQuantumTime — Quantum + Relativity Simulation Hub
 
 **Use-cases:**
