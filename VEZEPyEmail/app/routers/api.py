@@ -1,7 +1,28 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Dict
+from pydantic import BaseModel
+from db.repository import get_mailbox_id_for_user, list_messages_for_mailbox
 
 router = APIRouter()
+
+
+class MessageOut(BaseModel):
+    id: int
+    subject: str
+    from_: str | None = None
+    date: str
+    snippet: str | None = None
+    labels: List[str] | None = None
+    flags: List[str] | None = None
+    size: int | None = None
+    spam_score: float | None = None
+    unread: bool | None = None
+
+
+async def auth_user(token: str = Query(None, alias="access_token")) -> None:
+    # Minimal OIDC/JWT placeholder: require any non-empty token; replace with real verification.
+    if token in (None, ""):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
 
 
 def _sample_messages(user: str) -> List[Dict]:
@@ -29,10 +50,36 @@ def _sample_messages(user: str) -> List[Dict]:
 
 
 @router.get("/messages")
-async def list_messages(user: str = Query(..., description="User email, must be @vezeuniqverse.com")):
+async def list_messages(
+    user: str = Query(..., description="User email, must be @vezeuniqverse.com"),
+    _=Depends(auth_user),
+):
     if "@" not in user:
         raise HTTPException(status_code=400, detail="Invalid email")
     local, domain = user.split("@", 1)
     if domain.lower() != "vezeuniqverse.com":
         raise HTTPException(status_code=403, detail="Unsupported domain")
-    return {"user": user, "messages": _sample_messages(user)}
+    mailbox_id = await get_mailbox_id_for_user(user)
+    msgs = await list_messages_for_mailbox(mailbox_id)
+    # Transform field name 'from' -> 'from_'
+    output = [
+        MessageOut(
+            id=m["id"],
+            subject=m.get("subject"),
+            from_=m.get("from"),
+            date=m.get("date", ""),
+            snippet=m.get("snippet"),
+            labels=m.get("labels", []),
+            flags=m.get("flags", []),
+            size=m.get("size"),
+            spam_score=m.get("spam_score"),
+            unread=m.get("unread", True),
+        ).model_dump()
+        for m in msgs
+    ]
+    return {"user": user, "messages": output}
+
+
+@router.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}

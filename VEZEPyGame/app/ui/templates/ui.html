@@ -27,8 +27,9 @@
       </div>
       <div class="panel">
         <h3>Inbox (@vezeuniqverse.com)</h3>
-        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
-          <input id="mail-user" placeholder="you@vezeuniqverse.com" style="flex:1;"/>
+        <div style="display:grid;gap:6px;margin-bottom:8px;">
+          <input id="mail-user" placeholder="you@vezeuniqverse.com"/>
+          <input id="mail-token" placeholder="access token (demo)"/>
           <button class="btn" id="mail-load">Load</button>
         </div>
         <ul id="mail-list" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
@@ -53,13 +54,34 @@
         const res = await fetch(`/email/mail?user=${encodeURIComponent(user)}`);
         if(!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        const items = (data.messages||[]).map(m=>`<li><strong>${m.subject}</strong><br/><span style="color:#9aa">${m.snippet}</span></li>`).join('');
+        const items = (data.messages||[]).map(m=>{
+          const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
+          const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;
+          return `<li>${unread}<a href="${emailUrl}" target="_blank" style="color:#93c5fd;text-decoration:none"><strong>${m.subject}</strong></a><br/><span style="color:#9aa">${m.snippet||''}</span></li>`;
+        }).join('');
         list.innerHTML = items || '<li>No messages</li>';
       }catch(err){
         list.innerHTML = `<li style="color:#f88">${String(err)}</li>`;
       }
     }
-    loadBtn.addEventListener('click', load);
+    loadBtn.addEventListener('click', ()=>{
+      const token = document.getElementById('mail-token').value.trim();
+      const user = input.value.trim();
+      const qp = new URLSearchParams({user});
+      if(token) qp.set('access_token', token);
+      fetch(`/email/mail?${qp.toString()}`).then(async(res)=>{
+        if(!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const items = (data.messages||[]).map(m=>{
+          const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
+          const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;
+          return `<li>${unread}<a href=\"${emailUrl}\" target=\"_blank\" style=\"color:#93c5fd;text-decoration:none\"><strong>${m.subject}</strong></a><br/><span style=\"color:#9aa\">${m.snippet||''}</span></li>`;
+        }).join('');
+        list.innerHTML = items || '<li>No messages</li>';
+      }).catch(err=>{
+        list.innerHTML = `<li style=\"color:#f88\">${String(err)}</li>`;
+      })
+    });
   })();
 </script>
 {% endblock %}
