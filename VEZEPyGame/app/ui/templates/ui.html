@@ -25,10 +25,41 @@
         <h3>Quests</h3>
         <ul id="quests"></ul>
       </div>
+      <div class="panel">
+        <h3>Inbox (@vezeuniqverse.com)</h3>
+        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+          <input id="mail-user" placeholder="you@vezeuniqverse.com" style="flex:1;"/>
+          <button class="btn" id="mail-load">Load</button>
+        </div>
+        <ul id="mail-list" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
+      </div>
     </aside>
   </main>
 </div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/js/game.js"></script>
+<script>
+  (function(){
+    const loadBtn = document.getElementById('mail-load');
+    const input = document.getElementById('mail-user');
+    const list = document.getElementById('mail-list');
+    if(!loadBtn || !input || !list) return;
+    async function load(){
+      const user = input.value.trim();
+      if(!user) return;
+      list.innerHTML = '<li>Loading…</li>';
+      try{
+        const res = await fetch(`/email/mail?user=${encodeURIComponent(user)}`);
+        if(!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const items = (data.messages||[]).map(m=>`<li><strong>${m.subject}</strong><br/><span style="color:#9aa">${m.snippet}</span></li>`).join('');
+        list.innerHTML = items || '<li>No messages</li>';
+      }catch(err){
+        list.innerHTML = `<li style="color:#f88">${String(err)}</li>`;
+      }
+    }
+    loadBtn.addEventListener('click', load);
+  })();
+</script>
 {% endblock %}

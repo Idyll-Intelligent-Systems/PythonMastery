@@ -8,6 +8,7 @@ from services.leaderboards.api import router as lb_router
 from services.telemetry.api import router as tel_router
 from services.inventory.api import router as inv_router
 from services.ml.api import router as ml_router
+from services.email.api import router as mail_router
 
 app = FastAPI(title="VEZEPyGame")
 templates = Jinja2Templates(directory="app/ui/templates")
@@ -23,6 +24,7 @@ app.include_router(lb_router, prefix="/leaderboards", tags=["leaderboards"])
 app.include_router(tel_router, prefix="/telemetry", tags=["telemetry"])
 app.include_router(inv_router, prefix="/inventory", tags=["inventory"])
 app.include_router(ml_router, prefix="/ml", tags=["ml"])
+app.include_router(mail_router, prefix="/email", tags=["email"])
 
 
 @app.get("/", response_class=HTMLResponse)

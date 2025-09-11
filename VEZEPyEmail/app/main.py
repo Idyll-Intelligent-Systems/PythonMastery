@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.routers import ws
+from app.routers import api as email_api
 try:
     from app.routers import jmap
 except Exception:  # jmap may not exist yet in some minimal runs
@@ -53,6 +54,7 @@ def _sample_messages():
 if jmap is not None:
     app.include_router(jmap.router, tags=["jmap"])
 app.include_router(ws.router, tags=["ws"])
+app.include_router(email_api.router, prefix="/api", tags=["api"])
 
 
 @app.get("/", response_class=HTMLResponse)
