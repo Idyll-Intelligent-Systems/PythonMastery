@@ -56,12 +56,6 @@ Idyll-Python-Enterprise-Skeleton/
 ---
 
 # 📑 Key Files
-
-## **INSTRUCTIONS.md**
-
-Contains the full **Python-only enterprise master prompt** we wrote together.
-(It’s very long; I won’t repeat here unless you want the exact text again.)
-
 ---
 
 ## **README.md**
