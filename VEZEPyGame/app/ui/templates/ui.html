@@ -143,6 +143,19 @@
         await render(data);
       }catch(_){/* ignore */}
     }, 20000);
+
+    // SSE subscription (demo heartbeat)
+    try{
+      const emailBase = location.origin.replace(':8002', ':8004');
+      const es = new EventSource(`${emailBase}/api/events?access_token=demo`);
+      es.onmessage = async(_e)=>{
+        // on any event, refresh if user/token set
+        const user = input.value.trim();
+        const token = document.getElementById('mail-token').value.trim();
+        if(!user || !token) return;
+        try{ const data = await load(); await render(data); }catch(_){/* ignore */}
+      };
+    }catch(_){/* ignore */}
   })();
 </script>
 {% endblock %}
