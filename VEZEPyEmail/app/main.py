@@ -4,26 +4,43 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.routers import ws
 from app.routers import api as email_api
+from pathlib import Path
 try:
     from app.routers import jmap
 except Exception:  # jmap may not exist yet in some minimal runs
     jmap = None
 
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "ui" / "templates"
+STATIC_DIR = BASE_DIR / "ui" / "static"
+
 app = FastAPI(title="VEZEPyEmail JMAP & Webmail")
-templates = Jinja2Templates(directory="app/ui/templates")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 try:
     templates.env.auto_reload = True
 except Exception:
     pass
-app.mount("/static", StaticFiles(directory="app/ui/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-from db.database import get_session
+from db.database import get_session, engine
+from db.base import Base
 from db.repository import get_or_create_mailbox, list_messages_for_mailbox, mark_read
 if jmap is not None:
     app.include_router(jmap.router, tags=["jmap"])
 app.include_router(ws.router, tags=["ws"])
 app.include_router(email_api.router, prefix="/api", tags=["api"])
+
+
+@app.on_event("startup")
+async def _init_db() -> None:
+    """Create tables if they don't exist (useful for tests/dev)."""
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception:
+        # Best-effort; tests may run alembic separately
+        pass
 
 
 @app.get("/", response_class=HTMLResponse)

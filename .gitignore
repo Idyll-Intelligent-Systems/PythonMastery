@@ -1,0 +1,56 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checker caches
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Environments
+.venv/
+venv/
+.env
+.env.*
+.newenv/
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local databases and artifacts
+*.db
+*.sqlite
+email.db
+VEZEPyEmail/email.db
+VEZEPyEmail/test_email_api.db
+
+auth.json
+
+# Node
+node_modules/
+
+# Logs
+*.log

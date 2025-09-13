@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.deps import REQ_LAT
-from app.routers import pages, ws
+from .deps import REQ_LAT
+from .routers import pages, ws
 
 app = FastAPI(title="VEZEPyUniQVerse")
 

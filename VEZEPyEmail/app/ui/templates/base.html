@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VEZEPyEmail</title>
     <link rel="stylesheet" href="/static/css/email.css" />
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
   </head>
   <body>
     {% block content %}{% endblock %}
+    <footer style="text-align:center;color:#6b7280;font-size:12px;margin-top:16px;">
+      Tip: In dev/CI, actions call the API with access_token=demo. Configure RS256/HS256 for production.
+    </footer>
   </body>
   </html>

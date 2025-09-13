@@ -8,13 +8,23 @@ import os
 from db.base import Base
 from db import models  # noqa: F401 ensures models are imported
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
+
+# Allow overriding DB URL via environment (and prefer sync driver for Alembic)
+env_url = os.getenv("EMAIL_DB_URL")
+if env_url:
+    # Alembic uses sync engines; map sqlite+aiosqlite -> sqlite
+    if env_url.startswith("sqlite+aiosqlite"):
+        env_url = env_url.replace("sqlite+aiosqlite", "sqlite")
+    config.set_main_option("sqlalchemy.url", env_url)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    try:
+        fileConfig(config.config_file_name)
+    except Exception:
+        # logging config optional
+        pass
 
 target_metadata = Base.metadata
 

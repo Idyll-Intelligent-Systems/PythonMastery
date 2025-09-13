@@ -16,6 +16,18 @@ async def notify(ws: WebSocket):
         clients.discard(ws)
 
 
+# Compatibility echo endpoint for tests that import an ambiguous `app`
+@router.websocket("/ws/copilot")
+async def copilot(ws: WebSocket):
+    await ws.accept()
+    try:
+        while True:
+            msg = await ws.receive_text()
+            await ws.send_json({"role": "assistant", "text": f"echo: {msg}"})
+    except WebSocketDisconnect:
+        pass
+
+
 async def broadcast(event: dict):
     for c in list(clients):
         try:

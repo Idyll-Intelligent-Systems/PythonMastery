@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+app/__init__.py
 app/config.py
 app/deps.py
 app/main.py

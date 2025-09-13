@@ -1,0 +1,17 @@
+{# Renders a single message row snippet; expects m (dict) #}
+<a class="thread" href="/ui/message/{{m.id}}" data-id="{{m.id}}">
+  <div class="avatar"></div>
+  <div class="meta">
+    <div class="row1"><span class="from">{{m.from}}</span><span class="date">{{m.date}}</span></div>
+    <div class="subj">
+      {{m.subject}}
+      {% set is_star = 'Starred' in (m.flags or []) %}
+      <button class="btn secondary star-btn" data-id="{{m.id}}" title="Star">{{ '★' if is_star else '☆' }}</button>
+      <button class="btn secondary label-btn" data-id="{{m.id}}" title="Labels">🏷</button>
+    </div>
+    <div class="snippet">{{m.snippet}}</div>
+  </div>
+  <div class="labels">
+    {% for l in m.labels %}<span class="pill">{{l}}</span>{% endfor %}
+  </div>
+</a>

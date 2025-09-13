@@ -28,18 +28,9 @@
     </aside>
     <section class="list">
       {% set messages = messages or [] %}
-    {% for m in messages %}
-    <a class="thread" href="/ui/message/{{m.id}}">
-        <div class="avatar"></div>
-        <div class="meta">
-          <div class="row1"><span class="from">{{m.from}}</span><span class="date">{{m.date}}</span></div>
-          <div class="subj">{{m.subject}}</div>
-          <div class="snippet">{{m.snippet}}</div>
-        </div>
-        <div class="labels">
-      {% for l in m.labels %}<span class="pill">{{l}}</span>{% endfor %}
-        </div>
-      </a>
+      {% for m in messages %}
+        {% set _ = m.update({'from': m.get('from') or m.get('from_')}) %}
+        {% include "_message_row.html" %}
       {% endfor %}
       {% if not messages %}
       <div class="thread">
@@ -62,4 +53,57 @@
     <a class="btn secondary" href="/ui/inbox?offset={{next_offset}}{{'&q=' + q if q else ''}}">Next</a>
   </div>
 </div>
+<script>
+  (function(){
+    function on(selector, evt, handler){ (document.querySelectorAll(selector)||[]).forEach(el=> el.addEventListener(evt, handler)); }
+    async function post(url, body){
+      const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: body?JSON.stringify(body):null});
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    on('.star-btn','click', async (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      const id = e.currentTarget.dataset.id;
+      // If htmx is available, let it swap the row via partial
+      if (window.htmx) {
+        const row = e.currentTarget.closest('.thread');
+        if(row){
+          try{
+            await fetch(`/api/messages/${id}/star?access_token=demo`, {method:'POST'});
+            const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+            row.outerHTML = await res.text();
+            return;
+          }catch(err){ console.error(err); }
+        }
+      }
+      try{
+        const data = await post(`/api/messages/${id}/star?access_token=demo`);
+        e.currentTarget.textContent = data.starred ? '★' : '☆';
+      }catch(err){ console.error(err); }
+    });
+    on('.label-btn','click', async (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      const id = e.currentTarget.dataset.id;
+      const labels = prompt('Set labels (comma separated):','Important,Work');
+      if(labels===null) return;
+      const arr = labels.split(',').map(s=>s.trim()).filter(Boolean);
+      if (window.htmx) {
+        const row = e.currentTarget.closest('.thread');
+        if(row){
+          try{
+            await post(`/api/messages/${id}/labels?access_token=demo`, {labels: arr});
+            const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+            row.outerHTML = await res.text();
+            return;
+          }catch(err){ console.error(err); }
+        }
+      }
+      try{
+        await post(`/api/messages/${id}/labels?access_token=demo`, {labels: arr});
+        // naive refresh
+        location.reload();
+      }catch(err){ console.error(err); }
+    });
+  })();
+</script>
 {% endblock %}

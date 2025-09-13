@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from typing import List, Dict
 from pydantic import BaseModel
 from db.repository import (
@@ -9,11 +9,24 @@ from db.repository import (
     set_labels,
 )
 from db.database import get_session
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 import asyncio
 from app.security import require_scopes
+from streaming.redis import get_redis
 
 router = APIRouter()
+async def _publish(evt: dict, user: str | None = None):
+    try:
+        r = get_redis()
+        if not r:
+            return
+        import json
+        data = json.dumps(evt)
+        await r.publish("email:events", data)
+        if user:
+            await r.publish(f"email:events:{user}", data)
+    except Exception:
+        pass
 
 
 class MessageOut(BaseModel):
@@ -27,6 +40,8 @@ class MessageOut(BaseModel):
     size: int | None = None
     spam_score: float | None = None
     unread: bool | None = None
+class LabelsIn(BaseModel):
+    labels: List[str]
 
 
 auth_user = require_scopes(["email.read"])  # validates JWT and scope
@@ -98,6 +113,7 @@ async def set_read(
     session=Depends(get_session),
 ):
     await mark_read(session, message_id)
+    await _publish({"type": "mail.read", "id": message_id})
     return {"ok": True}
 
 
@@ -107,26 +123,72 @@ async def star_message(
     _=Depends(auth_user),
     session=Depends(get_session),
 ):
-    return await toggle_star(session, message_id)
+    res = await toggle_star(session, message_id)
+    await _publish({"type": "mail.star", "id": message_id, "starred": bool(res.get("starred", False))})
+    return res
 
 
 @router.post("/messages/{message_id}/labels")
 async def update_labels(
     message_id: int,
-    labels: List[str],
+    payload: LabelsIn,
     _=Depends(auth_user),
     session=Depends(get_session),
 ):
-    return await set_labels(session, message_id, labels)
+    res = await set_labels(session, message_id, payload.labels)
+    await _publish({"type": "mail.labels", "id": message_id})
+    return res
+
+
+@router.get("/messages/{message_id}/row", response_class=HTMLResponse)
+async def message_row(
+    message_id: int,
+    request: Request,
+    _=Depends(auth_user),
+    session=Depends(get_session),
+):
+    # Render a single message row partial for HTMX swaps
+    # Load the message from the user's mailbox slice
+    # For simplicity fetch the mailbox by query user if provided
+    user = request.query_params.get("user") or "demo@vezeuniqverse.com"
+    mailbox_id = await get_mailbox_id_for_user(user, session)
+    msgs = await list_messages_for_mailbox(session, mailbox_id, limit=1, offset=0, q=None)
+    # try to find exact id, if not in first page, fetch directly
+    m = next((m for m in msgs if m["id"] == message_id), None)
+    if not m:
+        # quick direct fetch by reusing list with larger window
+        msgs = await list_messages_for_mailbox(session, mailbox_id, limit=200, offset=0)
+        m = next((m for m in msgs if m["id"] == message_id), None)
+    if not m:
+        raise HTTPException(status_code=404, detail="Message not found")
+    # Jinja environment from main app
+    from app.main import templates  # lazy import to avoid cycles
+    # Ensure 'from' key present for partial template
+    if "from" not in m and "from_" in m:
+        m["from"] = m["from_"]
+    return templates.TemplateResponse("_message_row.html", {"request": request, "m": m})
 
 
 @router.get("/events")
-async def sse_events(_=Depends(auth_user)):
+async def sse_events(user: str | None = None, _=Depends(auth_user)):
     async def event_stream():
-        # Simple heartbeat for now; replace with Redis pubsub or DB triggers
-        while True:
-            yield f"data: {{\"type\": \"heartbeat\", \"ts\": \"{asyncio.get_event_loop().time()}\"}}\n\n"
-            await asyncio.sleep(15)
+        # Prefer Redis pubsub if available; fallback to heartbeat
+        r = get_redis()
+        if r:
+            channel = "email:events:%s" % user if user else "email:events"
+            pubsub = r.pubsub()
+            await pubsub.subscribe(channel)
+            try:
+                async for message in pubsub.listen():
+                    if message and message.get("type") == "message":
+                        data = message.get("data")
+                        yield f"data: {data}\n\n"
+            finally:
+                await pubsub.unsubscribe(channel)
+        else:
+            while True:
+                yield f"data: {{\"type\": \"heartbeat\", \"ts\": \"{asyncio.get_event_loop().time()}\"}}\n\n"
+                await asyncio.sleep(15)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

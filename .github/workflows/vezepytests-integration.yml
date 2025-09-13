@@ -31,3 +31,32 @@ jobs:
           VEZE_JWT_DEMO: "1"
         run: |
           pytest -q VEZEPyTests
+
+  smoke-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and start services
+        env:
+          VEZE_JWT_DEMO: "1"
+        run: |
+          docker compose up -d --build
+          # wait for ports
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/health && break || sleep 2; done
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8002/health && break || sleep 2; done
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8004/health && break || sleep 2; done
+      - name: Smoke test HTML endpoints
+        run: |
+          # Ensure HTML is returned (text/html) from UI pages
+          curl -fsSI http://127.0.0.1:8000 | grep -i "content-type" || true
+          curl -fsSI http://127.0.0.1:8002/ui | grep -i "content-type" || true
+          curl -fsSI http://127.0.0.1:8004/ui/inbox | grep -i "content-type" || true
+          curl -fsS http://127.0.0.1:8000 > /dev/null
+          curl -fsS http://127.0.0.1:8002/ui > /dev/null
+          curl -fsS http://127.0.0.1:8004/ui/inbox > /dev/null
+      - name: Shutdown
+        if: always()
+        run: |
+          docker compose down -v

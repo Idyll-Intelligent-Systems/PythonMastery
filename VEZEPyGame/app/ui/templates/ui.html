@@ -144,16 +144,19 @@
       }catch(_){/* ignore */}
     }, 20000);
 
-    // SSE subscription (demo heartbeat)
+    // SSE subscription: refresh inbox on specific mail events
     try{
       const emailBase = location.origin.replace(':8002', ':8004');
       const es = new EventSource(`${emailBase}/api/events?access_token=demo`);
-      es.onmessage = async(_e)=>{
-        // on any event, refresh if user/token set
+      es.onmessage = async(ev)=>{
+        let payload = null;
+        try{ payload = JSON.parse(ev.data); }catch(_){ /* legacy heartbeat */ }
         const user = input.value.trim();
         const token = document.getElementById('mail-token').value.trim();
         if(!user || !token) return;
-        try{ const data = await load(); await render(data); }catch(_){/* ignore */}
+        if(!payload || /^mail\./.test(payload.type || '') || payload.type === 'heartbeat'){
+          try{ const data = await load(); await render(data); }catch(_){/* ignore */}
+        }
       };
     }catch(_){/* ignore */}
   })();

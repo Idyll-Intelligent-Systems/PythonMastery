@@ -51,6 +51,7 @@ async def list_messages_for_mailbox(
                 "from": m.from_addr,
                 "date": (m.date.isoformat() if hasattr(m.date, "isoformat") else str(m.date)),
                 "flags": [p for p in (m.flags or "").split(",") if p],
+                "labels": [p for p in (m.labels or "").split(",") if p],
                 "size": m.size,
                 "spam_score": m.spam_score,
                 "snippet": m.snippet or "",
