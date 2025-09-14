@@ -12,6 +12,8 @@ docker compose up
 XEngine API/UI: [http://localhost:8006](http://localhost:8006)
 All endpoints available via Helm/compose.
 
+Default host port (compose): 8006. Override by exporting `XENGINE_PORT` before `docker compose up`.
+
 **What it is:**
 
 * One Python service that turns **X trends, user intel, posting, and LLM reasoning** into features for **VEZEPyGame** and the broader **VEZE UniQVerse**.

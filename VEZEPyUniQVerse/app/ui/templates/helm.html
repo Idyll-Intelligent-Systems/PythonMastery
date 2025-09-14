@@ -3,16 +3,10 @@
 <h2>VEZE Helm — Services</h2>
 <div class="grid">
   {% for s in services %}
-  <a class="card" href="{{ s.url }}" target="_blank" rel="noopener">
+  <div class="card">
     <div class="icon">{{ s.icon or "🧭" }}</div>
     <div class="title">{{ s.display or s.name }}</div>
     <div class="desc">{{ s.description or '' }}</div>
-    {% if (s.name and s.name|lower == 'game') or (s.display and 'game' in s.display|lower) %}
-      <div style="margin-top:8px;">
-        <span class="badge public">Action</span>
-        <a class="btn" style="margin-left:8px;" href="{{ s.url ~ '/ui' }}" target="_blank" rel="noopener">Play Now</a>
-      </div>
-    {% endif %}
     {% if s.healthy is defined %}
       <div class="status">
         <span class="dot {{ 'ok' if s.healthy else 'down' }}"></span>
@@ -22,7 +16,18 @@
         {% endif %}
       </div>
     {% endif %}
-  </a>
+    <div class="actions" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+      <a class="btn" href="{{ s.url }}" target="_blank" rel="noopener">Open</a>
+      {% set nm = (s.name or s.display or '')|lower %}
+      {% if 'game' in nm %}
+        <a class="btn" href="{{ s.url ~ '/ui' }}" target="_blank" rel="noopener">Play Now</a>
+      {% elif 'email' in nm %}
+        <a class="btn" href="{{ s.url ~ '/ui/inbox' }}" target="_blank" rel="noopener">Open Inbox</a>
+      {% elif 'xengine' in nm %}
+        <a class="btn" href="{{ s.url }}" target="_blank" rel="noopener">Open Intel</a>
+      {% endif %}
+    </div>
+  </div>
   {% endfor %}
   {% if services|length == 0 %}
   <div class="card">
