@@ -18,7 +18,18 @@ docker compose up
 - Email SMTP:              localhost:${EMAIL_SMTP_25:-2526} (dev), ${EMAIL_SMTP_587:-2588} (submission), ${EMAIL_SMTP_465:-2466} (SMTPS)
 - XEngine:                 [http://localhost:8006](http://localhost:8006)
 
-All services are networked via Redis (localhost:6379). To avoid local conflicts, Game runs on 8012 and Email SMTP defaults to 2526/2588/2466. Override via EMAIL_SMTP_25/587/465.
+All services are networked via Redis (localhost:6379). To avoid local conflicts, host ports default to UNI_PORT=8010, GAME_PORT=8012, EMAIL_PORT=8014, XENGINE_PORT=8006. Override via environment variables before starting. Email SMTP defaults are 2526/2588/2466 and can be overridden via EMAIL_SMTP_25/587/465.
+
+Examples (optional):
+
+```bash
+# revert to original ports if free
+export UNI_PORT=8000
+export GAME_PORT=8002
+export EMAIL_PORT=8004
+export XENGINE_PORT=8006
+docker compose up -d
+```
 
 ### Healthchecks
 
@@ -36,11 +47,12 @@ To build and push all images to AWS ECR:
 
 The stack is ready for Helm tiles and local compose. All endpoints above are available out of the box.
 
-Deliver an **enterprise-grade, production-ready** solution using **only Python** (3.11+). 
-No JavaScript frameworks; if UI is needed, use Python-native options (FastAPI+Jinja2/HTMX, Starlette templates, NiceGUI, Streamlit, or Plotly Dash). 
+Deliver an **enterprise-grade, production-ready** solution using **only Python** (3.11+).
+No JavaScript frameworks; if UI is needed, use Python-native options (FastAPI+Jinja2/HTMX, Starlette templates, NiceGUI, Streamlit, or Plotly Dash).
 Prefer FastAPI/Starlette for services.
 
 ## Scope (end-to-end)
+
 - **Web UI**: Python-rendered pages/components; SSR templates; forms; auth flows.
 - **APIs/Backend**: FastAPI (OpenAPI 3), pydantic models, async I/O, pagination, filtering, RBAC.
 - **Realtime/Streaming**: WebSockets (Starlette/FastAPI), Kafka/PubSub via aiokafka/google-cloud-pubsub, Redis Streams; backpressure & retry strategies.
@@ -54,11 +66,12 @@ Prefer FastAPI/Starlette for services.
 - **Compliance/Release**: SBOM (CycloneDX), license headers, versioning (semver), changelog; SLSA-style provenance notes.
 
 ## Output Requirements
+
 Always produce (in this order):
 1) **Architecture**: C4-style text (Context/Container/Component) + rationale, dataflow & trust boundaries.
 2) **Interfaces**: OpenAPI YAML (or gRPC proto) + pydantic schemas, role scopes (RBAC).
 3) **Data Model**: SQLAlchemy 2.0 models + Alembic migrations.
-4) **Code Skeletons** (runnable): 
+4) **Code Skeletons** (runnable):
    - `app/main.py` (FastAPI), routers, services, repositories, schemas
    - `ui/` (templates/components using Jinja2 or NiceGUI/Streamlit/Dash)
    - `streaming/` (consumers/producers, retry/backoff, DLQ)
@@ -73,6 +86,7 @@ Always produce (in this order):
 11) **Cost & Risks**: cost drivers, 3 key risks with mitigations, phased rollout/canary.
 
 ## Standards & Conventions
+
 - **Project layout**
 - **Coding**: type-hint everything; no global state; dependency injection via providers; pure domain services; adapters for I/O.
 - **DB**: migrations are mandatory; idempotent seeds.
@@ -80,21 +94,25 @@ Always produce (in this order):
 - **Files you must emit**: `pyproject.toml`, `Dockerfile`, `.pre-commit-config.yaml`, `.ruff.toml`, `mypy.ini`, `tox.ini`, `.github/workflows/ci.yml`, `docs/openapi.yaml`, `alembic/` setup.
 
 ## Realtime/Streaming Details
+
 - Use async consumers; implement **exactly-once-ish** via idempotency keys; at-least-once with dedupe table.
 - Expose `/events` WebSocket; include heartbeat/ping, auth, and reconnect guidance.
 - Provide example consumer for Kafka **and** an alternate Redis Streams path.
 
 ## AI/ML Details
+
 - `ml/train.py`: dataset load, train loop (Lightning), checkpoints, metrics.
 - `ml/eval.py`: offline eval; drift detection stub.
 - `ml/infer.py`: REST (FastAPI) & batch CLI; model versioning; CPU/GPU flags.
 - Optional RAG: Python-only embedding & retrieval (faiss/annoy), evaluation set + guardrails.
 
 ## Gaming Integration
+
 - HTTP/gRPC endpoints for matchmaking (Elo/MMR), leaderboards (time/range queries), purchase webhooks; include schema & tests.
 - Telemetry intake + aggregation; export to analytics DB.
 
 ## Deliverable Style
+
 - Keep examples runnable; include seed data and `make dev` / `scripts/dev.py`.
 - Comment decisions; add ADR for any major trade-off.
 - Avoid placeholders—write minimal working code paths.

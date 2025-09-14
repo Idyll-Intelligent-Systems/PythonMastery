@@ -7,6 +7,12 @@
     <div class="icon">{{ s.icon or "🧭" }}</div>
     <div class="title">{{ s.display or s.name }}</div>
     <div class="desc">{{ s.description or '' }}</div>
+    {% if (s.name and s.name|lower == 'game') or (s.display and 'game' in s.display|lower) %}
+      <div style="margin-top:8px;">
+        <span class="badge public">Action</span>
+        <a class="btn" style="margin-left:8px;" href="{{ s.url ~ '/ui' }}" target="_blank" rel="noopener">Play Now</a>
+      </div>
+    {% endif %}
     {% if s.healthy is defined %}
       <div class="status">
         <span class="dot {{ 'ok' if s.healthy else 'down' }}"></span>
