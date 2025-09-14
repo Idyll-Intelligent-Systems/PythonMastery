@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
-<body class="space-bg">
+<body class="space-bg theme-futuristic accent-gold">
   <canvas id="blackhole"></canvas>
   <nav class="veze-nav">
     <div class="brand"><a href="/">VEZE UniQVerse</a></div>
@@ -17,11 +17,25 @@
       <a href="/copilot">Copilot</a>
       <a href="/verse">Verse</a>
       <a href="/express">Express</a>
+      <button id="theme-toggle" class="btn" style="margin-left:12px;">Theme</button>
+      <div class="accent-chips" style="display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle">
+        <button class="chip" data-accent="accent-gold" title="Gold" aria-label="Gold"></button>
+        <button class="chip" data-accent="accent-silver" title="Silver" aria-label="Silver"></button>
+        <button class="chip" data-accent="accent-red" title="Red" aria-label="Red"></button>
+        <button class="chip" data-accent="accent-purple" title="Purple" aria-label="Purple"></button>
+        <button class="chip" data-accent="accent-violet" title="Violet" aria-label="Violet"></button>
+        <button class="chip" data-accent="accent-navy" title="Navy" aria-label="Navy"></button>
+        <button class="chip" data-accent="accent-orange" title="Orange" aria-label="Orange"></button>
+      </div>
+      <a href="/xengine/" class="avatar" title="XEngine Dashboard">
+        🧑‍🚀
+      </a>
     </div>
   </nav>
   <main class="content">
     {% block content %}{% endblock %}
   </main>
   <script src="/static/js/blackhole.js"></script>
+  <script src="/static/js/theme.js"></script>
 </body>
 </html>

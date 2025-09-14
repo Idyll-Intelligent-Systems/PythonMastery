@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="/static/css/game.css" />
+{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="topbar">
+    <div class="brand">VEZEPyGame</div>
+    <nav class="nav">
+      <a href="/ui">World</a>
+      <a href="/leaderboards">Leaderboards</a>
+      <a href="/inventory">Inventory</a>
+    </nav>
+  </header>
+  <main class="layout">
+    <section class="world">
+      <h2>Leaderboards</h2>
+      <div id="seasons" style="display:flex;gap:6px;margin:6px 0 10px 0;"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input id="season" placeholder="season (e.g., s1)"/>
+        <input id="mode" placeholder="mode (e.g., story)"/>
+        <button class="btn" id="load">Load</button>
+        <span style="color:#9aa">Submit score</span>
+        <input id="user_id" placeholder="user id"/>
+        <input id="score" placeholder="score" type="number" step="1"/>
+        <button class="btn secondary" id="submit">Submit</button>
+        <label style="display:flex;gap:6px;align-items:center;margin-left:auto"><input type="checkbox" id="auto"/> <span>Auto-refresh</span></label>
+      </div>
+      <table id="tbl" style="width:100%;margin-top:10px;border-collapse:collapse;">
+        <thead><tr><th style="text-align:left">User</th><th style="text-align:right">Score</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    <aside class="sidebar">
+      <div class="panel"><h3>Tips</h3><div>Submit scores via /leaderboards/submit</div></div>
+    </aside>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function(){
+    const btn=document.getElementById('load'); const tbl=document.querySelector('#tbl tbody');
+    const submit=document.getElementById('submit'); const auto=document.getElementById('auto');
+    const seasonsDiv = document.getElementById('seasons');
+    let seasons = [];
+    async function loadSeasons(){
+      try{
+        const res = await fetch('/leaderboards/seasons');
+        const data = await res.json();
+        seasons = data.seasons||[];
+        seasonsDiv.innerHTML = seasons.map(s=>`<button class="btn secondary season" data-s="${s.id}">${s.id.toUpperCase()}</button>`).join('');
+        // default selection
+        if(seasons.length){
+          const s0 = seasons[0];
+          document.getElementById('season').value = s0.id;
+          document.getElementById('mode').value = (s0.modes&&s0.modes[0]) || 'story';
+          await load();
+        }
+      }catch(_){ /* ignore offline */ }
+    }
+    seasonsDiv.addEventListener('click', (e)=>{
+      const b=e.target.closest('.season'); if(!b) return;
+      const sId=b.dataset.s; document.getElementById('season').value=sId;
+      const found=seasons.find(x=>x.id===sId);
+      if(found && found.modes && found.modes[0]) document.getElementById('mode').value=found.modes[0];
+      load();
+    });
+    async function load(){
+      const s=document.getElementById('season').value||'s1';
+      const m=document.getElementById('mode').value||'story';
+      const res = await fetch(`/leaderboards/${encodeURIComponent(s)}/${encodeURIComponent(m)}`);
+      const data = await res.json();
+      tbl.innerHTML = (data||[]).map(r=>`<tr><td>${r.user_id}</td><td style="text-align:right">${r.score}</td></tr>`).join('') || '<tr><td colspan="2">No data</td></tr>';
+    }
+  btn.addEventListener('click', load);
+    submit.addEventListener('click', async()=>{
+      const s=document.getElementById('season').value||'s1';
+      const m=document.getElementById('mode').value||'story';
+      const u=document.getElementById('user_id').value||'demo';
+      const score=parseFloat(document.getElementById('score').value||'0');
+      await fetch('/leaderboards/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({season:s, mode:m, user_id:u, score})});
+      await load();
+    });
+    let timer=null; function tick(){ if(auto.checked){ load().catch(()=>{}); } timer=setTimeout(tick, 5000); }
+    tick();
+    loadSeasons();
+  })();
+</script>
+{% endblock %}

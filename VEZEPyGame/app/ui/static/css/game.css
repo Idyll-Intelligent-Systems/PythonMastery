@@ -1,10 +1,70 @@
-body{margin:0;background:#0b0e14;color:#e6e6e6;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#111827;border-bottom:1px solid #1f2937}
+:root{--bg:#0b0e14;--text:#e6e6e6;--panel:#0f1624;--panel2:#0b0e18;--muted:#a1a1aa;--border:#1f2937;--nav:#111827;--glass:10px;--accent:#2948ff}
+.theme-light{--bg:#f7f8fc;--text:#0b0e14;--panel:#ffffffbf;--panel2:#ffffffa6;--muted:#5a6270;--border:#d9e0ea;--nav:#ffffffcc;--glass:10px}
+.theme-futuristic{--bg:#05070d;--text:#dfe7ff;--panel:#0f1624cc;--panel2:#0b1120cc;--muted:#93a4c4;--border:#2a3755;--nav:#0e1424a6;--glass:14px}
+
+/* Accent palette (synced via body.accent-*) */
+.accent-gold{ --accent:#bda26b }
+.accent-silver{ --accent:#c0c7d1 }
+.accent-red{ --accent:#ef4444 }
+.accent-purple{ --accent:#9b59b6 }
+.accent-violet{ --accent:#7c4dff }
+.accent-navy{ --accent:#2948ff }
+.accent-orange{ --accent:#ff8c42 }
+
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.app, body, .topbar, .panel, .world, .sidebar, .nav a {transition: background-color .25s ease, color .25s ease, border-color .25s ease}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--nav);border-bottom:1px solid var(--border);backdrop-filter:blur(var(--glass))}
 .topbar .brand{font-weight:700}
-.topbar .nav a{color:#a1a1aa;margin-right:12px;text-decoration:none}
-.topbar .nav a:hover{color:#fff}
-.layout{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px}
-.world{background:#05070d;border:1px solid #1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.topbar .nav a{color:var(--muted);margin-right:12px;text-decoration:none}
+.topbar .nav a:hover{color:var(--accent)}
+.layout{display:grid;grid-template-columns:70% 30%;gap:16px;padding:16px}
+.world{background:var(--panel2);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px}
 .sidebar{display:flex;flex-direction:column;gap:16px}
-.panel{background:#0f1624;border:1px solid #1f2937;border-radius:8px;padding:12px}
-#world{width:100%;height:auto;border-radius:8px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;backdrop-filter:blur(var(--glass))}
+/* world should not shrink in grid */
+.world{min-width:0}
+.sidebar{min-width:0}
+#world{width:100%;max-width:100%;aspect-ratio:16/9;height:auto;border-radius:8px}
+.world3d{width:100%;aspect-ratio:16/9}
+
+/* Fullscreen world mode (hide sidebar) */
+body.sidebar-hidden .layout{ grid-template-columns: 1fr; }
+body.sidebar-hidden .sidebar{ display: none; }
+
+/* Collapsible panels */
+.panel .panel-body{display:block}
+.panel.collapsed .panel-body{display:none}
+.panel h3{margin:0 0 8px 0;display:flex;align-items:center;gap:6px}
+.panel h3 .chev{display:inline-block;transition:transform .2s ease;color:var(--muted)}
+.panel.collapsed h3 .chev{transform:rotate(-90deg)}
+
+/* HUD bars */
+#hud .bar{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:6px}
+#hud .bar-outer{background:#1f2937;border-radius:6px;overflow:hidden;height:10px}
+#hud .bar-inner{height:10px;border-radius:6px}
+
+/* Mobile Controls */
+@media (hover: none) and (pointer: coarse) {
+	#mobile-controls { display:block !important; }
+	#dpad { width: 160px; height: 160px; }
+	.mc { width: 64px; height: 64px; border-radius: 50%; background: rgba(31,41,55,0.65); color:#e5e7eb; border: 1px solid #374151; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+	.mc span { pointer-events: none; }
+	.mc-sprint, .mc-dodge { width: 64px; height: 64px; border-radius: 50%; }
+	#actions .mc { width: 72px; height: 72px; font-weight: 700; }
+	.mc-small { width: 80px; height: 36px; border-radius: 8px; background: rgba(31,41,55,0.65); color:#e5e7eb; border: 1px solid #374151; }
+	/* Cooldown ring overlay */
+	#actions .mc, #aux .mc { position: relative; }
+	#actions .mc .cd, #aux .mc .cd { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(0,0,0,0.45) 0deg, transparent 0); opacity: 0; transition: opacity 120ms ease; }
+}
+
+/* HP pulse when taking damage */
+@keyframes pulseBar {
+	0% { filter: brightness(1.6); }
+	100% { filter: brightness(1); }
+}
+#hud-hp.pulse{ animation: pulseBar 220ms ease; }
+
+/* HUD bars */
+#hud .bar{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;margin:4px 0}
+#hud .bar-outer{background:#1f2937;border-radius:6px;overflow:hidden;height:10px}
+#hud .bar-inner{height:10px;border-radius:6px}

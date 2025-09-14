@@ -1,27 +1,88 @@
 :root {
+  /* Base variables (overridden by theme classes) */
+  --bg: #0b0e14;
+  --text: #e8f0ff;
+  --muted: #a9b8d6;
+  --card: rgba(20,20,35,.5);
+  --card-border: rgba(255,255,255,.1);
+  --nav: rgba(10,10,20,.35);
+  --accent: #bda26b; /* gold */
+  --accent-2: #7c4dff; /* violet */
+  --glass-blur: 10px;
+  /* Cosmic background */
   --bg1: radial-gradient(closest-side, rgba(0,0,0,0.9), rgba(0,0,0,0.98));
   --nebula: radial-gradient(800px 400px at 20% 10%, rgba(24,60,120,.35), transparent 60%),
             radial-gradient(600px 500px at 80% 30%, rgba(160,40,180,.25), transparent 55%),
             radial-gradient(1000px 700px at 50% 80%, rgba(10,160,160,.18), transparent 60%);
 }
-html,body {height:100%; margin:0; color:#e8f0ff; font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;}
-.space-bg {background: var(--bg1), var(--nebula), #000; overflow:hidden;}
+
+/* Theme variants */
+.theme-dark {
+  --bg: #0b0e14; --text: #e8f0ff; --muted: #a9b8d6; --card: rgba(20,20,35,.55); --card-border: rgba(255,255,255,.12); --nav: rgba(10,10,20,.35); --accent: #bda26b; --accent-2: #7c4dff; --glass-blur: 10px;
+}
+.theme-light {
+  --bg: #f6f7fb; --text: #0b0e14; --muted: #445; --card: rgba(255,255,255,.7); --card-border: rgba(0,0,0,.06); --nav: rgba(255,255,255,.7); --accent: #7c4dff; --accent-2: #e86a6a; --glass-blur: 10px;
+}
+.theme-futuristic {
+  --bg: #05070d; --text: #dfe7ff; --muted: #92a0c2; --card: rgba(15,20,40,.55); --card-border: rgba(160,200,255,.14); --nav: rgba(8,10,20,.4); --accent: #bda26b; --accent-2: #9b59b6; --glass-blur: 14px;
+}
+
+/* Service color accents (black, gold, silver, red, purple, violet, navy, orange) */
+.accent-gold{ --accent: #bda26b }
+.accent-silver{ --accent: #c0c7d1 }
+.accent-red{ --accent: #ef4444 }
+.accent-purple{ --accent: #9b59b6 }
+.accent-violet{ --accent: #7c4dff }
+.accent-navy{ --accent: #2948ff }
+.accent-orange{ --accent: #ff8c42 }
+
+html,body {height:100%; margin:0; color:var(--text); font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg);} 
+.space-bg {background: var(--bg1), var(--nebula), var(--bg); overflow:hidden;}
 #blackhole {position:fixed; inset:0; z-index:0;}
-.veze-nav{position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:14px 24px; backdrop-filter: blur(6px); background: rgba(10,10,20,.35); border-bottom: 1px solid rgba(255,255,255,.08);} 
-.veze-nav a{color:#cfe8ff; text-decoration:none; margin:0 10px;}
+.veze-nav{position:fixed; z-index:3; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:14px 24px; backdrop-filter: blur(var(--glass-blur)); background: var(--nav); border-bottom: 1px solid var(--card-border);} 
+.veze-nav a{color:var(--text); opacity:.9; text-decoration:none; margin:0 10px;}
 .brand{font-weight:700; letter-spacing:.5px}
 .content{position:relative; z-index:2; padding-top:96px; padding-bottom:48px; max-width:1100px; margin:0 auto; }
 .hero{display:flex; flex-direction:column; align-items:center; gap:16px; padding:80px 20px;}
 .hero h1{font-size:56px; margin:0;}
-.btn{padding:12px 18px; border-radius:14px; border:1px solid rgba(255,255,255,.2); color:#e8f0ff; background: rgba(20,20,35,.4); cursor:pointer}
+.btn{padding:12px 18px; border-radius:14px; border:1px solid var(--card-border); color:var(--text); background: var(--card); cursor:pointer}
+.btn:hover{ box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 60%, transparent), 0 6px 20px rgba(0,0,0,.25); }
 .btn.secondary{opacity:.8}
 .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:20px;}
-.card{background:rgba(20,20,35,.5); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px; text-decoration:none; color:#e8f0ff; transition: transform .2s ease, background .2s;}
-.card:hover{transform: translateY(-4px); background: rgba(30,30,60,.55);} 
+.card{background:var(--card); border:1px solid var(--card-border); border-radius:18px; padding:16px; text-decoration:none; color:var(--text); transition: transform .2s ease, background .2s, box-shadow .2s; backdrop-filter: blur(var(--glass-blur));}
+.card:hover{transform: translateY(-4px); background: color-mix(in oklab, var(--card), #ffffff 5%); box-shadow: 0 8px 30px rgba(0,0,0,.25);} 
 .icon{font-size:28px;}
+.status{display:flex; align-items:center; gap:8px; margin-top:8px; opacity:.9}
+.dot{width:10px; height:10px; border-radius:50%; display:inline-block}
+.dot.ok{background:#35d073; box-shadow:0 0 8px rgba(53,208,115,.7)}
+.dot.down{background:#e86a6a; box-shadow:0 0 8px rgba(232,106,106,.5)}
+.badge{font-size:11px; padding:2px 6px; border-radius:8px; border:1px solid rgba(255,255,255,.18); margin-left:6px}
+.badge.public{background:rgba(40,120,60,.35); color:#cfeedd}
+.badge.gated{background:rgba(120,40,40,.35); color:#ffd2d2}
 .links li{margin:8px 0;}
 .chat-log{min-height:240px; max-height:360px; overflow:auto; background: rgba(0,0,0,.25); padding:12px; border-radius:12px; margin-bottom:12px}
 .chat-log p{margin:6px 0;}
 .chat-log p.you{opacity:.9}
 .chat-form{display:flex; gap:8px}
 .chat-form input{flex:1; background: rgba(255,255,255,.06); color:#e8f0ff; border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:10px 12px}
+
+/* Accent chips */
+.chip{width:18px;height:18px;border-radius:50%;border:1px solid var(--card-border);background:#aaa;cursor:pointer;display:inline-block;transition:transform .15s ease, box-shadow .2s ease}
+.chip[data-accent="accent-gold"]{ background:#bda26b }
+.chip[data-accent="accent-silver"]{ background:#c0c7d1 }
+.chip[data-accent="accent-red"]{ background:#ef4444 }
+.chip[data-accent="accent-purple"]{ background:#9b59b6 }
+.chip[data-accent="accent-violet"]{ background:#7c4dff }
+.chip[data-accent="accent-navy"]{ background:#2948ff }
+.chip[data-accent="accent-orange"]{ background:#ff8c42 }
+.chip.active{ box-shadow:0 0 0 2px #fff5, 0 0 10px color-mix(in oklab, var(--accent) 50%, transparent) }
+.chip:hover{ transform: scale(1.1) }
+
+/* Gentle fade when theme/accent changes */
+body, .veze-nav, .card, .btn, .content, .hero, .grid {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+/* Profile avatar linking to XEngine */
+.avatar{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; margin-left:10px; border-radius:50%; border:1px solid var(--card-border); background: color-mix(in oklab, var(--card) 70%, transparent); text-decoration:none; font-size:18px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.avatar:hover{ box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 50%, transparent), 0 6px 18px rgba(0,0,0,.28); transform: translateY(-1px); }

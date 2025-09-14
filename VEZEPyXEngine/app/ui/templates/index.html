@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <h2>VEZEPyXEngine — Social Intelligence</h2>
+    <p>Live trends, user insights, Grok reasoning, and posting — all themed with UniQVerse.</p>
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <div class="title">🔥 Trends</div>
+      <ul id="trends" class="links" style="list-style:none;padding-left:0;min-height:120px;">
+        <li>Loading…</li>
+      </ul>
+    </div>
+
+    <div class="card" id="intel">
+      <div class="title">🧭 User Intel <span id="intel-src" class="badge badge-sandbox" title="Data source">sandbox</span>
+        <button id="live-check" class="btn" style="margin-left:8px;padding:2px 8px;font-size:.8em">Check live</button>
+        <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" rel="noopener noreferrer" class="btn" style="margin-left:8px;padding:2px 8px;font-size:.8em" title="Open X (Twitter) Developer Portal to create an app and get your Bearer Token">Get bearer token</a>
+        <span id="live-status" class="badge" style="display:none"></span>
+      </div>
+      <form id="intel-form" class="chat-form">
+        <input name="username" placeholder="@username" value="{{ default_handle }}" />
+        <button class="btn" type="submit">Fetch</button>
+      </form>
+      <pre id="intel-out" class="chat-log" style="min-height:120px"></pre>
+    </div>
+
+    <div class="card">
+      <div class="title">📊 Metrics</div>
+      <canvas id="metrics-chart" width="320" height="140" aria-label="User metrics chart"></canvas>
+      <small>Enter a username in User Intel and press Fetch to update.</small>
+    </div>
+
+    <div class="card">
+      <div class="title">✍️ Post Composer <span id="write-badge" class="badge" title="Write mode">off</span></div>
+      <form id="post-form" class="chat-form">
+        <textarea name="text" rows="3" placeholder="What’s happening?" style="width:100%"></textarea>
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="post_now" /> Post to X now (if enabled)</label>
+        <button class="btn" type="submit">Queue</button>
+      </form>
+      <pre id="post-out" class="chat-log" style="min-height:80px"></pre>
+    </div>
+
+    <div class="card">
+      <div class="title">🤖 Grok Chat</div>
+      <form id="grok-form" class="chat-form">
+        <textarea name="prompt" rows="3" placeholder="Ask Grok about the latest trends…" style="width:100%"></textarea>
+        <button class="btn" type="submit">Ask</button>
+      </form>
+      <pre id="grok-out" class="chat-log" style="min-height:80px"></pre>
+    </div>
+
+    <div class="card">
+      <div class="title">🗂️ Catalog</div>
+      <div class="tabs">
+        <button class="btn" data-kind="cars">Cars</button>
+        <button class="btn" data-kind="rockets">Rockets</button>
+        <button class="btn" data-kind="planets">Planets</button>
+      </div>
+      <ul id="catalog-list" class="links" style="list-style:none;padding-left:0;min-height:120px;"></ul>
+      <pre id="catalog-detail" class="chat-log" style="min-height:80px"></pre>
+    </div>
+
+    <div class="card">
+  <div class="title">📡 Activity <span class="status-wrap" aria-live="polite" aria-atomic="true"><span id="ws-status" class="status-dot ws-connecting" title="Connecting..." aria-label="Connecting"></span><span id="ws-status-text" class="status-text" aria-hidden="true">Connecting…</span></span> <label style="float:right;font-weight:normal;font-size:0.9em" title="Direct connects to ws://localhost:8006. Useful locally when proxies block websockets. In HTTPS or Codespaces, leave off."><input type="checkbox" id="ws-direct" /> Direct</label></div>
+      <ul id="activity" class="links" style="list-style:none;padding-left:0;min-height:120px;"></ul>
+    </div>
+  </div>
+  <div id="toast" role="status" aria-live="polite" style="position:fixed;right:20px;bottom:20px;background:var(--card);border:1px solid var(--card-border);padding:10px 14px;border-radius:10px;display:none"></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

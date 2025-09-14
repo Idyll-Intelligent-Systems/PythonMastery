@@ -48,6 +48,9 @@ VEZEPyEmail/email.db
 VEZEPyEmail/test_email_api.db
 
 auth.json
+cred.md
+.secrets/
+.env.local
 
 # Node
 node_modules/

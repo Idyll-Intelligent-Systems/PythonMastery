@@ -7,6 +7,15 @@
     <div class="icon">{{ s.icon or "🧭" }}</div>
     <div class="title">{{ s.display or s.name }}</div>
     <div class="desc">{{ s.description or '' }}</div>
+    {% if s.healthy is defined %}
+      <div class="status">
+        <span class="dot {{ 'ok' if s.healthy else 'down' }}"></span>
+        <span>{{ 'Healthy' if s.healthy else 'Unavailable' }}</span>
+        {% if s.requires_auth is defined %}
+          <span class="badge {{ 'gated' if s.requires_auth else 'public' }}">{{ 'Auth' if s.requires_auth else 'Public' }}</span>
+        {% endif %}
+      </div>
+    {% endif %}
   </a>
   {% endfor %}
   {% if services|length == 0 %}

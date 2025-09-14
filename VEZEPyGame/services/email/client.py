@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any
 import os
 import httpx
 from httpx import ASGITransport
+from ..registry import resolve
 
 
 class EmailClient:
@@ -20,7 +21,8 @@ class EmailClient:
         - http_client: Optional prebuilt httpx.AsyncClient to use (primarily for tests/DI).
         - transport: Optional httpx transport; if provided, an AsyncClient will be constructed with it.
         """
-        self.base_url = base_url or os.getenv("EMAIL_BASE_URL", "http://127.0.0.1:8004")
+        # Resolve base URL in priority: injected -> VEZE_SERVICE_EMAIL -> EMAIL_BASE_URL -> default
+        self.base_url = base_url or resolve("email", os.getenv("EMAIL_BASE_URL", "http://127.0.0.1:8004"))
         self._timeout = timeout
         self._http_client = http_client
         self._transport = transport

@@ -23,3 +23,25 @@ services:
     command: ["python","-m","uvicorn","app.main:app","--reload","--host","0.0.0.0","--port","8000","--log-level","warning"]
     volumes:
       - ./VEZEPyEmail:/app
+  xengine:
+    build:
+      args:
+        - PIP_NO_CACHE_DIR=1
+    command: ["python","-m","uvicorn","app.main:app","--reload","--host","0.0.0.0","--port","8006","--log-level","warning"]
+    volumes:
+      - ./VEZEPyXEngine:/app
+    environment:
+      - X_DEFAULT_HANDLE=@shivaveld_idyll
+      # For local dev, export X_BEARER_TOKEN in your shell to enable real data
+      # - X_BEARER_TOKEN
+    env_file:
+      - ./.env.local
+  xengine-worker:
+    build:
+      args:
+        - PIP_NO_CACHE_DIR=1
+    command: ["python","-m","app.worker"]
+    volumes:
+      - ./VEZEPyXEngine:/app
+    env_file:
+      - ./.env.local

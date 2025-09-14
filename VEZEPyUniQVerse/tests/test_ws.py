@@ -3,7 +3,7 @@ import contextlib
 import socket
 
 import pytest
-import websockets
+from websockets.client import connect
 from uvicorn import Config, Server
 
 from app.main import app
@@ -11,7 +11,7 @@ from app.main import app
 
 @contextlib.asynccontextmanager
 async def run_server(host: str = "127.0.0.1", port: int = 8765):
-    config = Config(app, host=host, port=port, log_level="warning")
+    config = Config(app, host=host, port=port, log_level="warning", ws="wsproto")
     server = Server(config=config)
     task = asyncio.create_task(server.serve())
     # wait until server started
@@ -33,7 +33,7 @@ async def run_server(host: str = "127.0.0.1", port: int = 8765):
 @pytest.mark.asyncio
 async def test_ws_echo():
     async with run_server():
-        async with websockets.connect("ws://127.0.0.1:8765/ws/copilot") as ws:
+        async with connect("ws://127.0.0.1:8765/ws/copilot") as ws:
             await ws.send("ping")
             msg = await asyncio.wait_for(ws.recv(), timeout=2)
             assert "echo: ping" in msg

@@ -1,0 +1,33 @@
+name: Repo Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.11', '3.12' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install services (editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./VEZEPyUniQVerse[dev]
+          pip install -e ./VEZEPyGame[dev]
+          pip install -e ./VEZEPyEmail[dev]
+      - name: Run focused smoke tests
+        env:
+          VEZE_JWT_DEMO: '1'
+          EMAIL_ASGI: '1'
+        run: |
+          pytest -q VEZEPyUniQVerse/tests/test_provision.py VEZEPyEmail/tests/test_api_messages.py tests/test_integration_game_email.py

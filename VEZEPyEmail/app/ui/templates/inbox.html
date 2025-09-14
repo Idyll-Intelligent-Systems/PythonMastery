@@ -10,13 +10,13 @@
       </form>
     </div>
     <div class="actions">
-      <button class="btn secondary">Refresh</button>
-      <button class="btn">Compose</button>
+      <a class="btn secondary" href="/ui/inbox">Refresh</a>
+      <a class="btn" href="/ui/compose">Compose</a>
     </div>
   </div>
   <div class="layout">
     <aside class="sidebar">
-      <div class="compose"><button class="btn">+ Compose</button></div>
+  <div class="compose"><a class="btn" href="/ui/compose">+ Compose</a></div>
       <nav class="folders">
         <a class="folder active" href="#">Inbox</a>
         <a class="folder" href="#">Starred</a>
@@ -39,8 +39,8 @@
       {% endif %}
     </section>
     <section class="detail">
-      <div class="msg-head"><div>Preview</div><div class="msg-tools"><button class="btn secondary">Archive</button><button class="btn secondary">Delete</button></div></div>
-      <div class="msg-body">Select a message to read.</div>
+      <div class="msg-head"><div id="preview-title">Preview</div><div class="msg-tools"><button id="btn-expand" class="btn secondary" title="Open full">Expand</button><button id="btn-min" class="btn secondary" title="Minimize">Minimize</button></div></div>
+      <div class="msg-body" id="preview-body">Select a message to read.</div>
     </section>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 16px;">
@@ -56,6 +56,36 @@
 <script>
   (function(){
     function on(selector, evt, handler){ (document.querySelectorAll(selector)||[]).forEach(el=> el.addEventListener(evt, handler)); }
+    // Inline preview: clicking a row shows it on the right; Expand opens full page
+    const detailTitle = document.getElementById('preview-title');
+    const detailBody = document.getElementById('preview-body');
+    let currentMsgId = null;
+    document.querySelectorAll('.thread').forEach(a=>{
+      a.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        const id = e.currentTarget.getAttribute('data-id');
+        currentMsgId = id;
+        try{
+          const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+          if(res.ok){
+            const html = await res.text();
+            // Parse title/snippet from the snippet markup
+            const tmp = document.createElement('div'); tmp.innerHTML = html;
+            const subj = (tmp.querySelector('.subj')?.childNodes[0]?.textContent || '').trim();
+            const snippet = (tmp.querySelector('.snippet')?.textContent || '').trim();
+            if(detailTitle) detailTitle.textContent = subj || `Message #${id}`;
+            if(detailBody) detailBody.textContent = snippet || '';
+          } else {
+            if(detailTitle) detailTitle.textContent = `Message #${id}`;
+            if(detailBody) detailBody.textContent = 'Unable to load preview.';
+          }
+        }catch(_){ if(detailBody) detailBody.textContent = 'Error loading preview.'; }
+      });
+    });
+    const btnExpand = document.getElementById('btn-expand');
+    if(btnExpand){ btnExpand.addEventListener('click', ()=>{ if(currentMsgId) window.location.href = `/ui/message/${currentMsgId}`; }); }
+    const btnMin = document.getElementById('btn-min');
+    if(btnMin){ btnMin.addEventListener('click', ()=>{ currentMsgId=null; if(detailTitle) detailTitle.textContent='Preview'; if(detailBody) detailBody.textContent='Select a message to read.'; }); }
     async function post(url, body){
       const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: body?JSON.stringify(body):null});
       if(!res.ok) throw new Error(await res.text());

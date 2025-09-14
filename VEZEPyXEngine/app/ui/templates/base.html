@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VEZEPyXEngine</title>
+    <link rel="stylesheet" href="static/css/x.css" />
+  </head>
+  <body class="theme-futuristic accent-violet">
+    <header class="topbar">
+  <div class="brand">VEZEPyXEngine</div>
+      <nav class="nav"><a href=".">Home</a> <a href="profile">Profile</a></nav>
+    </header>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+    <script>
+      (function(){
+        const root=document.body; const T=['theme-dark','theme-light','theme-futuristic']; const A=['accent-gold','accent-silver','accent-red','accent-purple','accent-violet','accent-navy','accent-orange'];
+        try{const t=localStorage.getItem('veze_theme'); if(t){root.classList.remove(...T); root.classList.add(t)}}catch(_){ }
+        try{const a=localStorage.getItem('veze_accent'); if(a){const rm=A.filter(c=>root.classList.contains(c)); if(rm.length) root.classList.remove(...rm); root.classList.add(a)}}catch(_){ }
+        window.addEventListener('storage',(e)=>{ if(e.key==='veze_theme'&&e.newValue){root.classList.remove(...T); root.classList.add(e.newValue)} if(e.key==='veze_accent'&&e.newValue){const rm=A.filter(c=>root.classList.contains(c)); if(rm.length) root.classList.remove(...rm); root.classList.add(e.newValue)} });
+      })();
+    </script>
+    <script src="static/js/x.js" defer></script>
+  </body>
+</html>

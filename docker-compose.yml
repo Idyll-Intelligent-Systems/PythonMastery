@@ -69,6 +69,40 @@ services:
       redis:
         condition: service_healthy
 
+  xengine:
+    build:
+      context: ./VEZEPyXEngine
+    container_name: veze_xengine
+    ports:
+      - "8006:8006"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8006/health\").getcode()==200 else 1)' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    environment:
+      - REDIS_URL=redis://redis:6379/3
+      - X_DEFAULT_HANDLE=@shivaveld_idyll
+      - POST_TO_X_ENABLED=false
+      # Provide one of these to enable real X API calls (optional)
+      # - X_BEARER_TOKEN=${X_BEARER_TOKEN}
+      # - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  xengine-worker:
+    build:
+      context: ./VEZEPyXEngine
+    container_name: veze_xengine_worker
+    command: ["python","-m","app.worker"]
+    environment:
+      - REDIS_URL=redis://redis:6379/3
+    depends_on:
+      redis:
+        condition: service_healthy
+
 networks:
   default:
     name: veze-net

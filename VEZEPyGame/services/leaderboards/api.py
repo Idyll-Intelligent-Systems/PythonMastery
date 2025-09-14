@@ -45,3 +45,15 @@ async def get_board(season: str, mode: str, limit: int = 100, offset: int = 0):
     key = f"lb:{season}:{mode}"
     items = await rr.zrevrange(key, offset, offset + limit - 1, withscores=True)
     return [{"user_id": u.decode() if hasattr(u, "decode") else u, "score": s} for u, s in items]
+
+
+@router.get("/seasons")
+async def get_seasons():
+    # Static list for now; can be extended to read from config/Redis later.
+    return {
+        "seasons": [
+            {"id": "s1", "modes": ["story", "boss-rush"]},
+            {"id": "s2", "modes": ["story", "endless"]},
+            {"id": "s3", "modes": ["story"]},
+        ]
+    }

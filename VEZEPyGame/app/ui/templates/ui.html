@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block head %}
 <link rel="stylesheet" href="/static/css/game.css" />
+<script defer src="/static/js/theme.js"></script>
 {% endblock %}
 {% block content %}
 <div class="app">
@@ -11,11 +12,87 @@
       <a href="/leaderboards">Leaderboards</a>
       <a href="/inventory">Inventory</a>
     </nav>
+    <div class="toolbar" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <label style="display:flex;gap:6px;align-items:center;">
+        <input type="checkbox" id="toggle-3d" /> <span>3D Mode</span>
+      </label>
+      <label style="display:flex;gap:6px;align-items:center;">
+        <span>World</span>
+        <select id="world-select-top" class="btn secondary" style="padding:4px 8px;">
+          <option value="VEZE">VEZE</option>
+          <option value="EARTH">EARTH</option>
+          <option value="DUNES">DUNES</option>
+          <option value="SNOW">SNOW</option>
+        </select>
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn secondary" id="time-anchor-top" title="Set a time anchor">Anchor</button>
+        <button class="btn secondary" id="time-rewind-top" title="Rewind to last anchor">Rewind</button>
+        <button class="btn secondary" id="time-forward-top" title="Fast-forward small step">Forward</button>
+        <button class="btn secondary" id="toggle-panels" title="Show/Hide right-side panels">Panels</button>
+      </div>
+    </div>
   </header>
   <main class="layout">
     <section class="world">
       <canvas id="world" width="960" height="540"></canvas>
+      <div id="world-3d" class="world3d" style="display:none;position:relative;"></div>
+      <div id="hit-flash" style="pointer-events:none;position:absolute;inset:0;background:rgba(239,68,68,0.25);opacity:0;transition:opacity 120ms ease;"></div>
       <div id="hover-preview" style="position:absolute;display:none;background:#111827;color:#e5e7eb;border:1px solid #1f2937;border-radius:6px;padding:8px;font-size:12px;max-width:320px"></div>
+      <!-- Mobile Controls Overlay -->
+      <div id="mobile-controls" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;display:none;">
+          <!-- Controls Settings -->
+          <div id="mc-settings" style="position:absolute;right:16px;top:64px;pointer-events:auto;display:none;background:rgba(17,24,39,0.9);border:1px solid #1f2937;border-radius:8px;padding:10px;color:#e5e7eb;min-width:220px;z-index:5;">
+            <div style="font-weight:600;margin-bottom:6px">Controls Settings</div>
+            <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+              <span style="width:90px;color:#9aa">Haptics</span>
+              <input id="mc-haptics" type="checkbox" checked />
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+              <span style="width:90px;color:#9aa">Opacity</span>
+              <input id="mc-opacity" type="range" min="0.2" max="1" step="0.05" value="0.65" style="flex:1"/>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+              <span style="width:90px;color:#9aa">Scale</span>
+              <input id="mc-scale" type="range" min="0.8" max="1.4" step="0.05" value="1" style="flex:1"/>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+              <span style="width:90px;color:#9aa">Mode</span>
+              <select id="mc-mode" class="btn secondary" style="padding:4px 8px;flex:1">
+                <option value="dpad">D-Pad</option>
+                <option value="joystick">Joystick</option>
+              </select>
+            </label>
+          </div>
+        <!-- D-Pad (bottom-left) -->
+        <div id="dpad" style="position:absolute;left:16px;bottom:16px;width:160px;height:160px;pointer-events:auto;z-index:2;">
+          <button class="mc mc-up" data-key="w" aria-label="Up" style="position:absolute;left:50%;top:0;transform:translateX(-50%);"></button>
+          <button class="mc mc-left" data-key="a" aria-label="Left" style="position:absolute;left:0;top:50%;transform:translateY(-50%);"></button>
+          <button class="mc mc-right" data-key="d" aria-label="Right" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"></button>
+          <button class="mc mc-down" data-key="s" aria-label="Down" style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);"></button>
+          <button class="mc mc-sprint" data-key="shift" aria-label="Sprint" style="position:absolute;right:-56px;bottom:8px;"><span>⟲</span></button>
+        </div>
+        <!-- Joystick (alternative) -->
+        <div id="joystick" style="position:absolute;left:16px;bottom:16px;width:180px;height:180px;pointer-events:auto;display:none;z-index:2;">
+          <div class="joy-base" style="position:absolute;left:0;top:0;right:0;bottom:0;border-radius:50%;border:1px solid #374151;background:rgba(31,41,55,0.35);"></div>
+          <div class="joy-knob" style="position:absolute;left:50%;top:50%;width:84px;height:84px;border-radius:50%;background:rgba(55,65,81,0.7);border:1px solid #4b5563;transform:translate(-50%,-50%);"></div>
+        </div>
+        <!-- Action cluster (bottom-right) -->
+        <div id="actions" style="position:absolute;right:16px;bottom:16px;width:auto;height:auto;pointer-events:auto;display:grid;grid-template-columns:repeat(3,72px);gap:14px;align-items:end;">
+          <button class="mc mc-act" data-impulse="j" aria-label="Light Attack"><span class="lbl">J</span><span class="cd"></span></button>
+          <button class="mc mc-act" data-impulse="k" aria-label="Heavy Attack"><span class="lbl">K</span><span class="cd"></span></button>
+          <button class="mc mc-act" data-impulse="f" aria-label="Parry"><span class="lbl">F</span><span class="cd"></span></button>
+          <button class="mc mc-act" data-impulse="q" aria-label="Ability Q"><span class="lbl">Q</span><span class="cd"></span></button>
+          <button class="mc mc-act" data-impulse="e" aria-label="Ability E"><span class="lbl">E</span><span class="cd"></span></button>
+          <button class="mc mc-dodge" data-key=" " aria-label="Dodge"><span class="lbl">⟲</span><span class="cd"></span></button>
+        </div>
+        <!-- Target/Lock and Switch (upper-right) -->
+        <div id="aux" style="position:absolute;right:16px;top:16px;display:flex;gap:10px;pointer-events:auto;z-index:3;">
+          <button class="mc mc-small" data-impulse="Tab" aria-label="Lock"><span>Lock</span></button>
+          <button class="mc mc-small" id="btn-switch-2d3d" aria-label="Switch Mode"><span>2D/3D</span></button>
+          <button class="mc mc-small" id="btn-mc-settings" aria-label="Controls Settings"><span>⚙︎</span></button>
+        </div>
+      </div>
       <div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
         <div style="background:#0f1624;border:1px solid #1f2937;border-radius:8px;max-width:600px;width:90%;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -27,32 +104,428 @@
       </div>
     </section>
     <aside class="sidebar">
-      <div class="panel">
-        <h3>Player</h3>
+      <div class="panel"><h3 class="collapser">Player</h3><div class="panel-body">
         <div id="player-stats"></div>
-      </div>
-      <div class="panel">
-        <h3>Quests</h3>
-        <ul id="quests"></ul>
-      </div>
-      <div class="panel">
-        <h3>Inbox (@vezeuniqverse.com) <span id="mail-unread" style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;">0</span></h3>
-        <div style="display:grid;gap:6px;margin-bottom:8px;">
-          <input id="mail-user" placeholder="you@vezeuniqverse.com"/>
-          <input id="mail-token" placeholder="access token (demo)"/>
-          <button class="btn" id="mail-load">Load</button>
+        <div id="hud">
+          <div style="margin-top:8px;color:#9aa">Vitals</div>
+          <div class="bar"><span>HP</span><div class="bar-outer"><div id="hud-hp" class="bar-inner" style="background:#ef4444;width:100%"></div></div></div>
+          <div class="bar"><span>Stamina</span><div class="bar-outer"><div id="hud-sta" class="bar-inner" style="background:#10b981;width:100%"></div></div></div>
+          <div style="margin-top:8px;color:#9aa">Cooldowns</div>
+          <div id="hud-cds" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;color:#d1d5db"></div>
+          <div id="hud-lock" style="margin-top:6px;color:#d1d5db"></div>
+          <div style="margin-top:8px;color:#9aa">Progress</div>
+          <div class="bar"><span>Rating</span><div class="bar-outer"><div id="hud-rating" class="bar-inner" style="background:#60a5fa;width:0%"></div></div></div>
+          <div class="bar"><span>Completionist</span><div class="bar-outer"><div id="hud-completion" class="bar-inner" style="background:#a78bfa;width:0%"></div></div></div>
+          <div id="hud-finished" style="margin-top:6px;color:#fbbf24"></div>
+          <div style="margin-top:8px;color:#9aa">Boss</div>
+          <div class="bar"><span>HP</span><div class="bar-outer"><div id="hud-boss-hp" class="bar-inner" style="background:#ef4444;width:0%"></div></div></div>
+          <div class="bar"><span>Stagger</span><div class="bar-outer"><div id="hud-boss-stagger" class="bar-inner" style="background:#60a5fa;width:0%"></div></div></div>
+          <div id="hud-boss-state" style="margin-top:6px;color:#d1d5db"></div>
         </div>
-        <ul id="mail-list" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
+      </div></div>
+      <div class="panel"><h3 class="collapser">Quests</h3><div class="panel-body"><ul id="quests"></ul></div></div>
+      <div class="panel"><h3 class="collapser">Trends</h3><div class="panel-body">
+        <div style="display:grid;gap:6px;margin-bottom:8px;">
+          <button class="btn" id="btn-trends">Load Trends</button>
+        </div>
+        <ul id="news-trends" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
+      </div></div>
+      <div class="panel"><h3 class="collapser">Inbox <small style="font-weight:400;color:#9aa">@vezeuniqverse.com</small> <span id="mail-unread" style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;">0</span></h3>
+        <div class="panel-body">
+          <div style="display:grid;gap:6px;margin-bottom:8px;">
+            <input id="mail-user" placeholder="you@vezeuniqverse.com"/>
+            <input id="mail-token" placeholder="access token (demo)"/>
+            <button class="btn" id="mail-load">Load</button>
+          </div>
+          <ul id="mail-list" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
+        </div>
       </div>
+      <div class="panel"><h3 class="collapser">Inventory</h3><div class="panel-body">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <input id="mini-inv-user" placeholder="user (demo)" style="flex:1"/>
+          <button class="btn secondary" id="mini-inv-load">Load</button>
+        </div>
+        <ul id="mini-inv-list" style="list-style:none;padding-left:0;margin:0;display:grid;gap:6px;"></ul>
+        <div style="text-align:right;margin-top:6px;"><a href="/inventory" class="btn secondary">Open</a></div>
+      </div></div>
+      <div class="panel"><h3 class="collapser">Leaderboards</h3><div class="panel-body">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+          <input id="mini-lb-season" placeholder="s1" style="width:80px"/>
+          <input id="mini-lb-mode" placeholder="story" style="width:100px"/>
+          <button class="btn secondary" id="mini-lb-load">Load</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr><th style="text-align:left">User</th><th style="text-align:right">Score</th></tr></thead>
+          <tbody id="mini-lb-body"></tbody>
+        </table>
+        <div style="text-align:right;margin-top:6px;"><a href="/leaderboards" class="btn secondary">Open</a></div>
+      </div></div>
     </aside>
   </main>
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="/static/js/game.js"></script>
-<script>
+<script src="/static/js/game.js?v={{ asset_v or '0' }}"></script>
+<script type="module">
+  let THREE;
+  const threeCdn = 'https://unpkg.com/three@0.158.0/build/three.module.js';
+  try { THREE = await import(threeCdn); } catch(_) { /* offline: ignore 3D */ }
+
+  // LocalStorage namespacing + migration
+  const LS_KEYS = {
+    mode: 'vezepy:mode_cfg:v1',
+    sidebar: 'vezepy:sidebar:collapsed:v1',
+    trends: 'vezepy:trends_cache:v1',
+  };
+  function migrateKey(oldKey, newKey){
+    try{
+      const old = localStorage.getItem(oldKey);
+      if(old && !localStorage.getItem(newKey)) localStorage.setItem(newKey, old);
+    }catch(_){/*noop*/}
+  }
+  migrateKey('game_mode_cfg', LS_KEYS.mode);
+  migrateKey('sidebar_collapsed_v1', LS_KEYS.sidebar);
+  migrateKey('game_trends_cache_v1', LS_KEYS.trends);
+
+  const toggle3d = document.getElementById('toggle-3d');
+  const world2d = document.getElementById('world');
+  const world3d = document.getElementById('world-3d');
+  const worldSelTop = document.getElementById('world-select-top');
+  const anchorBtn = document.getElementById('time-anchor-top');
+  const rewindBtn = document.getElementById('time-rewind-top');
+  const fwdBtn = document.getElementById('time-forward-top');
+
+  const saved = JSON.parse(localStorage.getItem(LS_KEYS.mode)||'{}');
+  if(saved.mode3d){ toggle3d.checked = true; }
+  if(saved.world){ worldSelTop.value = saved.world; }
+  // Sidebar fullscreen state
+  try{ if(saved.sidebarHidden){ document.body.classList.add('sidebar-hidden'); } }catch(_){ }
+
+  function persist(){
+  try{ localStorage.setItem(LS_KEYS.mode, JSON.stringify({mode3d: toggle3d.checked, world: worldSelTop.value, sidebarHidden: document.body.classList.contains('sidebar-hidden')})); }catch(_){ }
+  }
+
+  let game3d = null;
+  async function ensure3d(){
+    if(game3d || !THREE) return;
+  const mod = await import("/static/js/game3d.js?v={{ asset_v or '0' }}");
+  game3d = await mod.start3D({ THREE, mount: world3d, world: worldSelTop.value });
+  }
+
+  async function setMode(){
+    persist();
+    if(toggle3d.checked){
+      world2d.style.display = 'none';
+      world3d.style.display = 'block';
+      await ensure3d();
+  if(game3d && game3d.setWorld) game3d.setWorld(worldSelTop.value);
+      if(game3d && game3d.resume) game3d.resume();
+    } else {
+      world3d.style.display = 'none';
+      world2d.style.display = 'block';
+      if(game3d && game3d.pause) game3d.pause();
+    }
+  }
+  toggle3d.addEventListener('change', setMode);
+  worldSelTop.addEventListener('change', async()=>{
+    persist();
+    if(toggle3d.checked && game3d && game3d.setWorld){ game3d.setWorld(worldSelTop.value); }
+  });
+  anchorBtn.addEventListener('click', ()=> game3d && game3d.anchor && game3d.anchor());
+  rewindBtn.addEventListener('click', ()=> game3d && game3d.rewind && game3d.rewind());
+  fwdBtn.addEventListener('click', ()=> game3d && game3d.forward && game3d.forward());
+  const panelsBtn = document.getElementById('toggle-panels');
+  if(panelsBtn){ panelsBtn.addEventListener('click', ()=>{ document.body.classList.toggle('sidebar-hidden'); persist(); }); }
+
+  setMode();
+  // Hit flash effect
+  window.hitFlash = function(){
+    const hf = document.getElementById('hit-flash'); if(!hf) return;
+    hf.style.opacity = '1';
+    setTimeout(()=>{ hf.style.opacity = '0'; }, 140);
+  }
+  // Global HUD updater to be called from 2D/3D engines
+  window.updateHUD = function(state){
+    try{
+      const s = state||{};
+      const clamp01 = (v)=> Math.max(0, Math.min(1, v||0));
+      // Vitals
+      const hpEl = document.getElementById('hud-hp');
+      const staEl = document.getElementById('hud-sta');
+      // Pulse HP bar when decreasing
+      const prev = window.updateHUD.__prev || {};
+      if(hpEl){
+        const pct = clamp01((s.hp||0)/(s.maxHp||100));
+        hpEl.style.width = (pct*100).toFixed(0)+'%';
+        if(typeof prev.hp==='number' && typeof s.hp==='number' && s.hp < prev.hp){
+          hpEl.classList.remove('pulse');
+          // reflow to restart animation
+          void hpEl.offsetWidth;
+          hpEl.classList.add('pulse');
+        }
+      }
+      if(staEl){ const pct = clamp01((s.stamina||0)/(s.maxStamina||100)); staEl.style.width = (pct*100).toFixed(0)+'%'; }
+      // Cooldowns
+      const cds = document.getElementById('hud-cds');
+      if(cds){
+        const qv = (typeof s.cds?.q==='number') ? s.cds.q : 0;
+        const ev = (typeof s.cds?.e==='number') ? s.cds.e : 0;
+        const dv = (typeof s.cds?.dodge==='number') ? s.cds.dodge : 0;
+        const q = qv>0 ? `${qv.toFixed(1)}s` : 'ready';
+        const e = ev>0 ? `${ev.toFixed(1)}s` : 'ready';
+        const d = dv>0 ? `${dv.toFixed(1)}s` : 'ready';
+        cds.innerHTML = `<div>Q ${q}</div><div>E ${e}</div><div>Dodge ${d}</div>`;
+      }
+      // Forward to mobile cooldown ring updater if present
+      if(window.__updateMobileCooldowns){ window.__updateMobileCooldowns(s.cds||{q:0,e:0,dodge:0}); }
+      // Lock
+      const lock = document.getElementById('hud-lock');
+      if(lock){ lock.textContent = s.lock ? 'LOCKED' : ''; }
+      // Progress
+      const rating = Math.max(0, Math.min(100, s.rating||0));
+      const compl  = Math.max(0, Math.min(100, s.completionist||0));
+      const r = document.getElementById('hud-rating'); if(r) r.style.width = rating+'%';
+      const c = document.getElementById('hud-completion'); if(c) c.style.width = compl+'%';
+      const fin = document.getElementById('hud-finished'); if(fin) fin.textContent = s.finished ? 'FINISHED' : '';
+      // Boss
+      const bh = document.getElementById('hud-boss-hp'); if(bh && s.boss){ const pct = clamp01((s.boss.hp||0)/(s.boss.maxHp||1)); bh.style.width=(pct*100).toFixed(0)+'%'; }
+      const bs = document.getElementById('hud-boss-stagger'); if(bs && s.boss){ const pct = clamp01((s.boss.stagger||0)/100); bs.style.width=(pct*100).toFixed(0)+'%'; }
+      const bst = document.getElementById('hud-boss-state'); if(bst){ if(s.boss){ bst.textContent = s.boss.engaged? `Phase ${s.boss.phase||1}` : 'Idle'; } else { bst.textContent = ''; } }
+      // Basic stats list
+      const stats = document.getElementById('player-stats');
+      if(stats){
+        const hpTxt = typeof s.hp==='number' ? Math.round(s.hp) : '–';
+        const lvlTxt = s.level ?? '–';
+        const xpTxt = typeof s.xp==='number' ? (s.xp.toFixed ? s.xp.toFixed(1) : s.xp) : '–';
+        stats.innerHTML = `<div>HP: ${hpTxt}</div><div>Level: ${lvlTxt}</div><div>XP: ${xpTxt}</div>`;
+      }
+      window.updateHUD.__prev = { hp: s.hp };
+    }catch(_){/*noop*/}
+  }
+  // Initialize HUD with default values so UI doesn't show dashes before first tick
+  window.updateHUD({
+    hp: 100, maxHp: 100,
+    stamina: 100, maxStamina: 100,
+  cds: { q: 0, e: 0, dodge: 0 },
+    lock: false,
+    rating: 0, completionist: 0, finished: false,
+    level: 1, xp: 0,
+    boss: { hp: 0, maxHp: 1, stagger: 0, engaged: false, phase: 1 },
+  });
+  // Collapsible panels with persistence
   (function(){
-    const loadBtn = document.getElementById('mail-load');
+    const key = LS_KEYS.sidebar;
+    let state={};
+    try{ state = JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch(_){ state={}; }
+    document.querySelectorAll('.panel').forEach((p, idx)=>{
+      const h = p.querySelector('h3.collapser');
+      const body = p.querySelector('.panel-body');
+      if(!h||!body) return;
+      h.style.cursor='pointer';
+      // inject chevron
+      if(!h.querySelector('.chev')){ const s=document.createElement('span'); s.className='chev'; s.textContent='▾'; h.prepend(s); }
+      const id = h.textContent.trim().toLowerCase().split(/\s+/).join('-')+`-${idx}`;
+      if(state[id]) p.classList.add('collapsed');
+      h.addEventListener('click', ()=>{
+        p.classList.toggle('collapsed');
+        state[id] = p.classList.contains('collapsed');
+        try{ localStorage.setItem(key, JSON.stringify(state)); }catch(_){ }
+      });
+    });
+  })();
+  // Mobile Controls wiring (touch + mouse)
+  (function(){
+    const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const ctrls = document.getElementById('mobile-controls');
+    if(!ctrls) return;
+    ctrls.style.display = isTouch ? 'block' : 'none';
+  function currentUser(){ const el=document.getElementById('mini-inv-user'); const v=(el&&el.value&&el.value.trim())||'demo'; return v; }
+  function cfgKey(){ return `vezepy:mobile-controls:v1:${currentUser()}`; }
+  let cfg = { opacity: 0.65, scale: 1.0, mode: 'dpad', haptics: true };
+  try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(cfgKey())||'{}')||{}); }catch(_){ }
+  function persistMC(){ try{ localStorage.setItem(cfgKey(), JSON.stringify(cfg)); }catch(_){ } }
+    function applyCfg(){
+      ctrls.style.opacity = String(cfg.opacity||0.65);
+      ctrls.style.transform = `scale(${cfg.scale||1})`;
+      const dpad = document.getElementById('dpad');
+      const joy = document.getElementById('joystick');
+      if(dpad&&joy){ dpad.style.display = cfg.mode==='dpad' ? 'block' : 'none'; joy.style.display = cfg.mode==='joystick' ? 'block' : 'none'; }
+  const modeSel = document.getElementById('mc-mode'); if(modeSel) modeSel.value = cfg.mode||'dpad';
+  const hap = document.getElementById('mc-haptics'); if(hap) hap.checked = !!cfg.haptics;
+      const op = document.getElementById('mc-opacity'); if(op) op.value = String(cfg.opacity||0.65);
+      const sc = document.getElementById('mc-scale'); if(sc) sc.value = String(cfg.scale||1);
+    }
+    applyCfg();
+    (function(){
+      const panel = document.getElementById('mc-settings');
+      const btn = document.getElementById('btn-mc-settings');
+      if(btn && panel){
+        const toggle = (e)=>{ e.preventDefault(); panel.style.display = panel.style.display==='none' || panel.style.display==='' ? 'block' : 'none'; };
+        btn.addEventListener('click', toggle);
+        btn.addEventListener('touchstart', toggle, { passive:false });
+      }
+  const op = document.getElementById('mc-opacity');
+      const sc = document.getElementById('mc-scale');
+      const md = document.getElementById('mc-mode');
+  const hp = document.getElementById('mc-haptics');
+      if(op){ op.addEventListener('input', ()=>{ cfg.opacity = parseFloat(op.value)||0.65; persistMC(); applyCfg(); }); }
+      if(sc){ sc.addEventListener('input', ()=>{ cfg.scale = parseFloat(sc.value)||1; persistMC(); applyCfg(); }); }
+      if(md){ md.addEventListener('change', ()=>{ cfg.mode = md.value==='joystick'?'joystick':'dpad'; persistMC(); applyCfg(); }); }
+  if(hp){ hp.addEventListener('change', ()=>{ cfg.haptics = !!hp.checked; persistMC(); }); }
+  // When user field changes, re-load settings namespace
+  const userInput = document.getElementById('mini-inv-user');
+  if(userInput){ userInput.addEventListener('change', ()=>{ try{ cfg = Object.assign({ opacity:0.65, scale:1, mode:'dpad', haptics:true }, JSON.parse(localStorage.getItem(cfgKey())||'{}')||{}); }catch(_){ cfg={ opacity:0.65, scale:1, mode:'dpad', haptics:true }; } applyCfg(); }); }
+    })();
+    function dispatchKey(type, key){
+      const ev = new KeyboardEvent(type, { key, bubbles: true });
+      window.dispatchEvent(ev);
+    }
+  function vibrate(ms=10){ try{ if(cfg.haptics && navigator && typeof navigator.vibrate==='function'){ navigator.vibrate(ms); } }catch(_){/*noop*/} }
+    function tapImpulse(name){
+      try { window.dispatchEvent(new CustomEvent('impulse', { detail: { name } })); } catch(_){ }
+      const map = { 'Tab':'Tab', ' ':' ' };
+      const k = map[name] || name;
+      dispatchKey('keydown', k);
+      setTimeout(()=> dispatchKey('keyup', k), 50);
+      vibrate(10);
+    }
+    function bindHold(btn, key){
+      const start = (e)=>{ e.preventDefault(); dispatchKey('keydown', key); vibrate(10); };
+      const end = (e)=>{ e.preventDefault(); dispatchKey('keyup', key); };
+      btn.addEventListener('touchstart', start, { passive:false });
+      btn.addEventListener('touchend', end, { passive:false });
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', end);
+      btn.addEventListener('mouseleave', end);
+    }
+    function bindTap(btn, name){
+      const fire = (e)=>{ e.preventDefault(); if(!canFire(name)) return; tapImpulse(name); };
+      btn.addEventListener('touchstart', fire, { passive:false });
+      btn.addEventListener('click', fire);
+    }
+    let latestCds = { q:0, e:0, dodge:0 };
+    function canFire(name){
+      const n = String(name||'').toLowerCase();
+      if(n==='q') return (latestCds.q||0) <= 0.01;
+      if(n==='e') return (latestCds.e||0) <= 0.01;
+      if(n===' ' || n==='space') return (latestCds.dodge||0) <= 0.01;
+      return true;
+    }
+    (function(){
+      const root = document.getElementById('joystick'); if(!root) return;
+      const knob = root.querySelector('.joy-knob');
+      let active=false; let v={x:0,y:0}; let pressed = new Set();
+      const radius = 80;
+      function applyKeys(){
+        const th=0.25; const want=new Set();
+        if(v.y < -th) want.add('w'); if(v.y > th) want.add('s');
+        if(v.x > th) want.add('d'); if(v.x < -th) want.add('a');
+        for(const k of want){ if(!pressed.has(k)){ dispatchKey('keydown', k); pressed.add(k); } }
+        for(const k of Array.from(pressed)){ if(!want.has(k)){ dispatchKey('keyup', k); pressed.delete(k); } }
+      }
+      function setKnob(dx,dy){
+        const len = Math.hypot(dx,dy); const cl = Math.min(len, radius);
+        const nx = len? dx/len : 0; const ny = len? dy/len : 0;
+        v.x = nx * (cl/radius); v.y = ny * (cl/radius);
+        knob.style.left = `calc(50% + ${v.x*radius}px)`;
+        knob.style.top  = `calc(50% + ${v.y*radius}px)`;
+        applyKeys();
+      }
+      function reset(){ v={x:0,y:0}; knob.style.left='50%'; knob.style.top='50%'; applyKeys(); }
+      const onDown = (e)=>{ active=true; const t=(e.touches? e.touches[0] : e); const r=root.getBoundingClientRect(); setKnob(t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)); e.preventDefault(); };
+      const onMove = (e)=>{ if(!active) return; const t=(e.touches? e.touches[0] : e); const r=root.getBoundingClientRect(); setKnob(t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)); e.preventDefault(); };
+      const onUp   = (e)=>{ if(!active) return; active=false; reset(); e.preventDefault(); };
+      root.addEventListener('touchstart', onDown, { passive:false });
+      root.addEventListener('touchmove', onMove, { passive:false });
+      root.addEventListener('touchend', onUp, { passive:false });
+      root.addEventListener('mousedown', onDown);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    })();
+    // Bind D-pad and sprint/dodge
+    document.querySelectorAll('#dpad [data-key]').forEach(el=> bindHold(el, el.getAttribute('data-key')));
+    document.querySelectorAll('#actions [data-key]').forEach(el=> bindHold(el, el.getAttribute('data-key')));
+    document.querySelectorAll('#actions [data-impulse]').forEach(el=> bindTap(el, el.getAttribute('data-impulse')));
+    const lockBtn = document.querySelector('#aux .mc-small[data-impulse="Tab"]');
+    if(lockBtn) bindTap(lockBtn, 'Tab');
+    const switchBtn = document.getElementById('btn-switch-2d3d');
+    if(switchBtn){
+      switchBtn.addEventListener('click', (e)=>{ e.preventDefault(); const t = document.getElementById('toggle-3d'); if(t){ t.checked = !t.checked; t.dispatchEvent(new Event('change')); } });
+      switchBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); const t = document.getElementById('toggle-3d'); if(t){ t.checked = !t.checked; t.dispatchEvent(new Event('change')); } }, { passive:false });
+    }
+    const canvas = document.getElementById('world');
+    if(canvas){
+      const fire = (e)=>{ e.preventDefault(); tapImpulse('j'); };
+      canvas.addEventListener('touchstart', fire, { passive:false });
+      canvas.addEventListener('click', (e)=>{ if(isTouch){ fire(e); } });
+    }
+    window.addEventListener('impulse', (ev)=>{ /* bridge noop */ });
+    // Mobile cooldown rings updater
+    (function(){
+      const qBtn = document.querySelector('#actions [data-impulse="q"]');
+      const eBtn = document.querySelector('#actions [data-impulse="e"]');
+      const dBtn = document.querySelector('#actions .mc-dodge');
+      function setProg(btn, frac){
+        if(!btn) return; const cd = btn.querySelector('.cd');
+        const f = Math.max(0, Math.min(1, frac||0));
+        if(cd){ cd.style.background = `conic-gradient(rgba(0,0,0,0.45) ${f*360}deg, transparent 0)`; cd.style.opacity = f>0? '1':'0'; }
+        // Numeric countdown on label
+        const lbl = btn.querySelector('.lbl');
+        if(lbl){
+          let base = lbl.dataset.base || lbl.textContent || '';
+          if(!lbl.dataset.base) lbl.dataset.base = base;
+          if(f>0){
+            // approximate remaining seconds from fraction and default durations
+            let total = 0; if(btn===qBtn) total=5; else if(btn===eBtn) total=3; else if(btn===dBtn) total=1; else total = f*5;
+            const remain = Math.max(0, Math.ceil(f*total));
+            lbl.textContent = String(remain);
+          } else {
+            lbl.textContent = lbl.dataset.base || base;
+          }
+        }
+        btn.disabled = f>0.01;
+      }
+      window.__updateMobileCooldowns = function(cds){
+        latestCds = { q: cds?.q||0, e: cds?.e||0, dodge: cds?.dodge||0 };
+        const qf = Math.max(0, Math.min(1, (latestCds.q||0)/5));
+        const ef = Math.max(0, Math.min(1, (latestCds.e||0)/3));
+        const df = Math.max(0, Math.min(1, (latestCds.dodge||0)/1));
+        setProg(qBtn, qf); setProg(eBtn, ef); setProg(dBtn, df);
+      }
+    })();
+  })();
+  (function(){
+  const loadBtn = document.getElementById('mail-load');
+  const trendsBtn = document.getElementById('btn-trends');
+  const trendsList = document.getElementById('news-trends');
+    async function loadTrends(force){
+      if(!trendsList) return;
+      try{
+        const key = LS_KEYS.trends;
+        const now = Date.now();
+        if(!force){
+          try{
+            const cached = JSON.parse(localStorage.getItem(key)||'null');
+            if(cached && (now - cached.ts) < 5*60*1000){
+              const items = (cached.data.trends||[]).map(t=>`<li><strong>${t.tag}</strong> <span style="color:#9aa">${t.volume}</span></li>`).join('');
+              trendsList.innerHTML = items || '<li>No trends</li>';
+              return;
+            }
+          }catch(_){ /* ignore cache errors */ }
+        }
+        trendsList.innerHTML = '<li>Loading…</li>';
+        const res = await fetch('/news/trends');
+        const data = await res.json();
+        const items = (data.trends||[]).map(t=>`<li><strong>${t.tag}</strong> <span style="color:#9aa">${t.volume}</span></li>`).join('');
+        trendsList.innerHTML = items || '<li>No trends</li>';
+        try{ localStorage.setItem(key, JSON.stringify({ts: now, data})); }catch(_){ /* ignore */ }
+      }catch(err){ trendsList.innerHTML = `<li style="color:#f88">${String(err)}</li>`; }
+    }
+    if(trendsBtn && trendsList){
+      trendsBtn.addEventListener('click', ()=> loadTrends(true));
+      // Auto-load once on page load
+      loadTrends(false);
+    }
     const input = document.getElementById('mail-user');
     const list = document.getElementById('mail-list');
     if(!loadBtn || !input || !list) return;
@@ -82,6 +555,45 @@
     modalClose.addEventListener('click', ()=> modal.style.display='none');
 
     async function render(listData){
+  // Mini Inventory (auto-refresh)
+  (function(){
+    const btn = document.getElementById('mini-inv-load'); const list = document.getElementById('mini-inv-list');
+    if(!btn||!list) return;
+    async function load(){
+      const u = (document.getElementById('mini-inv-user').value||'demo').trim();
+      try{
+        list.innerHTML = '<li>Loading…</li>';
+        const res = await fetch(`/inventory/${encodeURIComponent(u)}`);
+        const data = await res.json();
+        const items = (data.items||[]).slice(0,5);
+        list.innerHTML = items.length ? items.map(it=>`<li><strong>${it.sku}</strong> x ${it.qty}</li>`).join('') : '<li>No items</li>';
+      }catch(err){ list.innerHTML = `<li style="color:#f88">${String(err)}</li>`; }
+    }
+    btn.addEventListener('click', load);
+    // Kick once and schedule auto-refresh
+    load();
+    setInterval(load, 30000);
+  })();
+  // Mini Leaderboards (auto-refresh)
+  (function(){
+    const btn = document.getElementById('mini-lb-load'); const body = document.getElementById('mini-lb-body');
+    if(!btn||!body) return;
+    async function load(){
+      const s=(document.getElementById('mini-lb-season').value||'s1').trim();
+      const m=(document.getElementById('mini-lb-mode').value||'story').trim();
+      try{
+        body.innerHTML = '<tr><td colspan="2">Loading…</td></tr>';
+        const res = await fetch(`/leaderboards/${encodeURIComponent(s)}/${encodeURIComponent(m)}`);
+        const data = await res.json();
+        const rows = (data||[]).slice(0,5);
+        body.innerHTML = rows.length ? rows.map(r=>`<tr><td>${r.user_id}</td><td style="text-align:right">${r.score}</td></tr>`).join('') : '<tr><td colspan="2">No data</td></tr>';
+      }catch(err){ body.innerHTML = `<tr><td colspan="2" style="color:#f88">${String(err)}</td></tr>`; }
+    }
+    btn.addEventListener('click', load);
+    // Kick once and schedule auto-refresh
+    load();
+    setInterval(load, 30000);
+  })();
       const items = (listData.messages||[]).map(m=>{
         const unread = m.unread ? '<span style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;margin-right:6px">●</span>' : '';
         const emailUrl = `${location.origin.replace(':8002', ':8004')}/ui/message/${m.id}`;

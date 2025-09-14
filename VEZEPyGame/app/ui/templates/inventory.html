@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="/static/css/game.css" />
+{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="topbar">
+    <div class="brand">VEZEPyGame</div>
+    <nav class="nav">
+      <a href="/ui">World</a>
+      <a href="/leaderboards">Leaderboards</a>
+      <a href="/inventory">Inventory</a>
+    </nav>
+  </header>
+  <main class="layout">
+    <section class="world">
+      <h2>Inventory</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input id="user" placeholder="user id (e.g., demo)"/>
+        <button class="btn" id="load">Load</button>
+        <span style="color:#9aa">Add item</span>
+        <input id="item_name" placeholder="name or sku"/>
+        <input id="item_qty" placeholder="qty" type="number" step="1" value="1"/>
+        <button class="btn secondary" id="add">Add</button>
+      </div>
+      <ul id="items" style="list-style:none;padding-left:0;margin-top:8px"></ul>
+    </section>
+    <aside class="sidebar">
+      <div class="panel"><h3>Tips</h3><div>Extend the inventory service to add items.</div></div>
+    </aside>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function(){
+    const btn=document.getElementById('load'); const list=document.getElementById('items'); const add=document.getElementById('add');
+    async function load(){
+      const u=document.getElementById('user').value||'demo';
+      const res = await fetch(`/inventory/${encodeURIComponent(u)}`);
+      const data = await res.json();
+      list.innerHTML = (data.items||[]).map(it=>`<li><strong>${it.sku}</strong> x ${it.qty}</li>`).join('') || '<li>No items</li>';
+    }
+    btn.addEventListener('click', load);
+    add.addEventListener('click', async()=>{
+      const u=document.getElementById('user').value||'demo';
+      const name=document.getElementById('item_name').value||'mystery';
+      const qty=parseInt(document.getElementById('item_qty').value||'1',10);
+      await fetch(`/inventory/${encodeURIComponent(u)}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, qty})});
+      await load();
+    });
+  })();
+</script>
+{% endblock %}

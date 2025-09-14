@@ -4,10 +4,16 @@ app/__init__.py
 app/config.py
 app/deps.py
 app/main.py
+app/clients/__init__.py
+app/clients/email_client.py
+app/clients/registry_client.py
+app/routers/__init__.py
+app/routers/auth.py
 app/routers/pages.py
 app/routers/ws.py
 app/ui/static/css/theme.css
 app/ui/static/js/blackhole.js
+app/ui/static/js/theme.js
 app/ui/templates/base.html
 app/ui/templates/copilot.html
 app/ui/templates/express.html
@@ -15,6 +21,7 @@ app/ui/templates/helm.html
 app/ui/templates/index.html
 app/ui/templates/verse.html
 tests/test_health.py
+tests/test_provision.py
 tests/test_ws.py
 veze_uniqverse_portal.egg-info/PKG-INFO
 veze_uniqverse_portal.egg-info/SOURCES.txt
