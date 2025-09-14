@@ -1,0 +1,66 @@
+name: Build and Push All Services to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag (defaults to latest)
+        required: false
+        default: latest
+  push:
+    branches: [ main ]
+    paths:
+      - 'VEZEPyUniQVerse/**'
+      - 'VEZEPyGame/**'
+      - 'VEZEPyEmail/**'
+
+jobs:
+  build-and-push-all:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: eu-north-1
+      ECR_ACCOUNT_ID: '879584802968'
+      IMAGE_TAG: ${{ github.event.inputs.tag || 'latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repositories exist
+        run: |
+          for repo in "veze/uniqverse" "veze/game" "veze/email"; do
+            aws ecr describe-repositories --repository-names "$repo" --region "${AWS_REGION}" >/dev/null 2>&1 \
+              || aws ecr create-repository --repository-name "$repo" --image-scanning-configuration scanOnPush=true --region "${AWS_REGION}";
+          done
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push VEZEPyUniQVerse
+        working-directory: VEZEPyUniQVerse
+        run: |
+          docker build -t veze/uniqverse:${{ env.IMAGE_TAG }} .
+          docker tag veze/uniqverse:${{ env.IMAGE_TAG }} ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/uniqverse:${{ env.IMAGE_TAG }}
+          docker push ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/uniqverse:${{ env.IMAGE_TAG }}
+
+      - name: Build and push VEZEPyGame
+        working-directory: VEZEPyGame
+        run: |
+          docker build -t veze/game:${{ env.IMAGE_TAG }} .
+          docker tag veze/game:${{ env.IMAGE_TAG }} ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/game:${{ env.IMAGE_TAG }}
+          docker push ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/game:${{ env.IMAGE_TAG }}
+
+      - name: Build and push VEZEPyEmail
+        working-directory: VEZEPyEmail
+        run: |
+          docker build -t veze/email:${{ env.IMAGE_TAG }} .
+          docker tag veze/email:${{ env.IMAGE_TAG }} ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/email:${{ env.IMAGE_TAG }}
+          docker push ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/veze/email:${{ env.IMAGE_TAG }}

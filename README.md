@@ -405,3 +405,28 @@ def test_health():
 * Open [http://localhost:8000](http://localhost:8000) → API docs, `/health`, `/events`.
 
 ---
+
+## ECR: Build and Push All Services
+
+This repo includes a script and a GitHub Actions workflow to build and push all services (UniQVerse, Game, Email) to Amazon ECR.
+
+Local (requires AWS CLI and Docker):
+
+```bash
+chmod +x scripts/ecr_build_all.sh
+./scripts/ecr_build_all.sh eu-north-1 879584802968 latest
+```
+
+GitHub Actions workflow: `.github/workflows/ecr-push-all.yml`
+
+Requirements:
+
+- Repository secret `AWS_ECR_ROLE_ARN` pointing to an IAM Role with ECR push permissions
+- The workflow uses OIDC to assume the role (no long-lived AWS keys)
+
+Triggers:
+
+- Push to main affecting `VEZEPyUniQVerse/**`, `VEZEPyGame/**`, or `VEZEPyEmail/**`
+- Manual dispatch from the Actions tab with optional `tag` input (defaults to `latest`)
+
+Note: The workflow will automatically create the required ECR repositories (`veze/uniqverse`, `veze/game`, `veze/email`) in `eu-north-1` if they don't already exist (with scan-on-push enabled).

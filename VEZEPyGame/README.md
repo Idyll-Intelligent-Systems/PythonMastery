@@ -252,6 +252,50 @@ def predict_skill(r: SkillReq):
 
 ---
 
+## Deployment: Push Docker image to Amazon ECR
+
+Prerequisites:
+
+* AWS CLI v2 installed and configured with credentials that can push to the ECR repo
+* Docker installed and running
+
+Quick push using helper script:
+
+```bash
+./scripts/ecr_build_push.sh eu-north-1 879584802968 veze/game latest
+```
+
+Equivalent manual commands:
+
+```bash
+aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 879584802968.dkr.ecr.eu-north-1.amazonaws.com
+docker build -t veze/game .
+docker tag veze/game:latest 879584802968.dkr.ecr.eu-north-1.amazonaws.com/veze/game:latest
+docker push 879584802968.dkr.ecr.eu-north-1.amazonaws.com/veze/game:latest
+```
+
+### GitHub Actions: Build and Push to ECR
+
+This repo includes a reusable workflow to build and push the `VEZEPyGame` image to ECR on main pushes or manually via the Actions tab.
+
+Workflow file: `.github/workflows/ecr-push.yml`
+
+Secrets required:
+
+* `AWS_ECR_ROLE_ARN` — An IAM role ARN with permissions to push to the ECR repo. The workflow uses OIDC to assume this role (no long-lived keys).
+
+Manual dispatch (optional): provide a custom tag; defaults to `latest`.
+
+Note: The workflow will automatically create the ECR repository (`veze/game`) in `eu-north-1` if it doesn't exist yet (scan-on-push enabled).
+
+### UI Features: Mobile & Fullscreen
+
+* Panels button to hide/show the right sidebar; fullscreen world when hidden; state persists.
+* Mobile settings panel (⚙︎): haptics on/off, overlay opacity, scale, and mode (D-pad/Joystick).
+* Per-user settings keyed by the Inventory user field; changing the user reloads their settings.
+* Cooldown visuals: ring overlays + numeric countdowns on Q/E/Dodge; buttons disable during cooldown.
+* Sidebar HUD includes Dodge cooldown text alongside Q/E.
+
 ## 13) Minimal FastAPI wiring (Gateway)
 
 ```python

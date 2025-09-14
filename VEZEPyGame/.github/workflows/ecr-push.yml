@@ -1,0 +1,56 @@
+name: Build and Push to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag (defaults to latest)
+        required: false
+        default: latest
+  push:
+    branches: [ main ]
+    paths:
+      - 'VEZEPyGame/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: eu-north-1
+      ECR_ACCOUNT_ID: '879584802968'
+      ECR_REPO: 'veze/game'
+      IMAGE_TAG: ${{ github.event.inputs.tag || 'latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names "${ECR_REPO}" --region "${AWS_REGION}" >/dev/null 2>&1 \
+            || aws ecr create-repository --repository-name "${ECR_REPO}" --image-scanning-configuration scanOnPush=true --region "${AWS_REGION}"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        working-directory: VEZEPyGame
+        run: |
+          docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+
+      - name: Tag image
+        run: |
+          docker tag ${ECR_REPO}:${IMAGE_TAG} ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+
+      - name: Push image
+        run: |
+          docker push ${{ env.ECR_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
