@@ -12,21 +12,21 @@ docker compose up
 
 ### Endpoints
 
-- UniQVerse Portal:        [http://localhost:8010](http://localhost:8010)
-- Game Service:            [http://localhost:8012](http://localhost:8012)
-- Email Service (API/UI):  [http://localhost:8014](http://localhost:8014)
+- UniQVerse Portal:        [http://localhost:8000](http://localhost:8000)
+- Game Service:            [http://localhost:8002](http://localhost:8002)
+- Email Service (API/UI):  [http://localhost:8004](http://localhost:8004)
 - Email SMTP:              localhost:${EMAIL_SMTP_25:-2526} (dev), ${EMAIL_SMTP_587:-2588} (submission), ${EMAIL_SMTP_465:-2466} (SMTPS)
 - XEngine:                 [http://localhost:8006](http://localhost:8006)
 
-All services are networked via Redis (localhost:6379). To avoid local conflicts, host ports default to UNI_PORT=8010, GAME_PORT=8012, EMAIL_PORT=8014, XENGINE_PORT=8006. Override via environment variables before starting. Email SMTP defaults are 2526/2588/2466 and can be overridden via EMAIL_SMTP_25/587/465.
+All services are networked via Redis (localhost:6379). Host ports default to UNI_PORT=8000, GAME_PORT=8002, EMAIL_PORT=8004, XENGINE_PORT=8006. Override via environment variables before starting. Email SMTP defaults are 2526/2588/2466 and can be overridden via EMAIL_SMTP_25/587/465.
 
 Examples (optional):
 
 ```bash
-# revert to original ports if free
-export UNI_PORT=8000
-export GAME_PORT=8002
-export EMAIL_PORT=8004
+# customize ports if needed (e.g., if 8000/8002/8004 are taken locally)
+export UNI_PORT=8010
+export GAME_PORT=8012
+export EMAIL_PORT=8014
 export XENGINE_PORT=8006
 docker compose up -d
 ```

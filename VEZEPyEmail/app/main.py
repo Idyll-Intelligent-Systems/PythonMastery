@@ -57,10 +57,10 @@ async def _ensure_seed(session, user: str) -> None:
     if msgs:
         return
     base_links = (
-        "- Portal: http://127.0.0.1:8010/\n"
+        "- Portal: http://127.0.0.1:8000/\n"
         "- XEngine: http://127.0.0.1:8006/\n"
-        "- Game: http://127.0.0.1:8012/\n"
-        "- Email: http://127.0.0.1:8014/\n"
+        "- Game: http://127.0.0.1:8002/\n"
+        "- Email: http://127.0.0.1:8004/\n"
     )
     await create_message(
         session,

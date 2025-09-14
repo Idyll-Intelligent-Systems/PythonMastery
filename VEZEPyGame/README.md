@@ -9,10 +9,10 @@ docker compose build
 docker compose up
 ```
 
-Game API/UI: [http://localhost:8012](http://localhost:8012)
+Game API/UI: [http://localhost:8002](http://localhost:8002)
 All endpoints available via Helm/compose.
 
-Default host port (compose): 8012. Override by exporting `GAME_PORT` before `docker compose up`.
+Default host port (compose): 8002. Override by exporting `GAME_PORT` before `docker compose up`.
 
 ## 1) Architecture (C4-in-brief)
 

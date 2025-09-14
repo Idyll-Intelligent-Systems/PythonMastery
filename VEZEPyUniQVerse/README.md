@@ -7,7 +7,7 @@ docker compose build
 docker compose up
 ```
 
-Portal: [http://localhost:8010](http://localhost:8010)
+Portal: [http://localhost:8000](http://localhost:8000)
 All endpoints available via Helm/compose.
 **Python-only** FastAPI portal named **VEZEPyUniQVerse** that acts as the entrypoint website to all VEZE services (VEZEPyGame, VEZEPyEmail, VEZEPyWeb, VEZEPySports, VEZEPySocial, etc.).
 Work inside the repo **VEZEPyUniQVerse/**
@@ -15,9 +15,9 @@ All business logic must be in Python; client visuals can use **static CSS and a 
 
 ### Default ports (compose)
 
-- Portal (UniQVerse): 8010 (override with UNI_PORT)
-- Game: 8012 (override with GAME_PORT)
-- Email: 8014 (override with EMAIL_PORT)
+- Portal (UniQVerse): 8000 (override with UNI_PORT)
+- Game: 8002 (override with GAME_PORT)
+- Email: 8004 (override with EMAIL_PORT)
 - XEngine: 8006 (override with XENGINE_PORT)
 
 You can change host ports by exporting these env vars before `docker compose up`.

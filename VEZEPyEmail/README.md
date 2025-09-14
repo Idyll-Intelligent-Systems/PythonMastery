@@ -9,11 +9,11 @@ docker compose build
 docker compose up
 ```
 
-Email API/UI: [http://localhost:8014](http://localhost:8014)
+Email API/UI: [http://localhost:8004](http://localhost:8004)
 SMTP (defaults via env): localhost:${EMAIL_SMTP_25:-2526} (dev), ${EMAIL_SMTP_587:-2588} (submission), ${EMAIL_SMTP_465:-2466} (SMTPS)
 All endpoints available via Helm/compose.
 
-Default host port (compose): 8014. Override by exporting `EMAIL_PORT` before `docker compose up`.
+Default host port (compose): 8004. Override by exporting `EMAIL_PORT` before `docker compose up`.
 
 ## Architecture (C4-brief)
 
