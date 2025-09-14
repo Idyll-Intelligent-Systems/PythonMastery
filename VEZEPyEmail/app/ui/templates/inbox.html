@@ -14,6 +14,7 @@
       <a class="btn" href="/ui/compose">Compose</a>
     </div>
   </div>
+  <meta id="current-user" data-user="{{ user or 'demo@vezeuniqverse.com' }}" />
   <div class="layout">
     <aside class="sidebar">
   <div class="compose"><a class="btn" href="/ui/compose">+ Compose</a></div>
@@ -56,17 +57,18 @@
 <script>
   (function(){
     function on(selector, evt, handler){ (document.querySelectorAll(selector)||[]).forEach(el=> el.addEventListener(evt, handler)); }
-    // Inline preview: clicking a row shows it on the right; Expand opens full page
-    const detailTitle = document.getElementById('preview-title');
-    const detailBody = document.getElementById('preview-body');
+  // Inline preview: clicking a row shows it on the right; Expand opens full page
+  const detailTitle = document.getElementById('preview-title');
+  const detailBody = document.getElementById('preview-body');
+  const currentUser = (document.getElementById('current-user')?.dataset.user) || 'demo@vezeuniqverse.com';
     let currentMsgId = null;
-    document.querySelectorAll('.thread').forEach(a=>{
+  document.querySelectorAll('.thread').forEach(a=>{
       a.addEventListener('click', async (e)=>{
         e.preventDefault();
         const id = e.currentTarget.getAttribute('data-id');
         currentMsgId = id;
         try{
-          const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+          const res = await fetch(`/api/messages/${id}/row?user=${encodeURIComponent(currentUser)}&access_token=demo`);
           if(res.ok){
             const html = await res.text();
             // Parse title/snippet from the snippet markup
@@ -99,15 +101,15 @@
         const row = e.currentTarget.closest('.thread');
         if(row){
           try{
-            await fetch(`/api/messages/${id}/star?access_token=demo`, {method:'POST'});
-            const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+            await fetch(`/api/messages/${id}/star?user=${encodeURIComponent(currentUser)}&access_token=demo`, {method:'POST'});
+            const res = await fetch(`/api/messages/${id}/row?user=${encodeURIComponent(currentUser)}&access_token=demo`);
             row.outerHTML = await res.text();
             return;
           }catch(err){ console.error(err); }
         }
       }
       try{
-        const data = await post(`/api/messages/${id}/star?access_token=demo`);
+  const data = await post(`/api/messages/${id}/star?user=${encodeURIComponent(currentUser)}&access_token=demo`);
         e.currentTarget.textContent = data.starred ? '★' : '☆';
       }catch(err){ console.error(err); }
     });
@@ -121,15 +123,15 @@
         const row = e.currentTarget.closest('.thread');
         if(row){
           try{
-            await post(`/api/messages/${id}/labels?access_token=demo`, {labels: arr});
-            const res = await fetch(`/api/messages/${id}/row?access_token=demo`);
+            await post(`/api/messages/${id}/labels?user=${encodeURIComponent(currentUser)}&access_token=demo`, {labels: arr});
+            const res = await fetch(`/api/messages/${id}/row?user=${encodeURIComponent(currentUser)}&access_token=demo`);
             row.outerHTML = await res.text();
             return;
           }catch(err){ console.error(err); }
         }
       }
       try{
-        await post(`/api/messages/${id}/labels?access_token=demo`, {labels: arr});
+  await post(`/api/messages/${id}/labels?user=${encodeURIComponent(currentUser)}&access_token=demo`, {labels: arr});
         // naive refresh
         location.reload();
       }catch(err){ console.error(err); }

@@ -1,5 +1,17 @@
 # VEZEPyXEngine — “X (Twitter) + Grok” Intelligence & Social Bridge for VEZE UniQVerse
 
+## Quickstart: Local Dev
+
+Spin up all VEZE services (UniQVerse, Game, Email, XEngine):
+
+```bash
+docker compose build
+docker compose up
+```
+
+XEngine API/UI: [http://localhost:8006](http://localhost:8006)
+All endpoints available via Helm/compose.
+
 **What it is:**
 
 * One Python service that turns **X trends, user intel, posting, and LLM reasoning** into features for **VEZEPyGame** and the broader **VEZE UniQVerse**.

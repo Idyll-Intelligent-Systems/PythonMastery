@@ -28,12 +28,16 @@ build_push() {
 
 main(){
   login
-  # Game (gateway/ui)
+  # UniQVerse portal
   build_push "VEZEPyUniQVerse" "veze/uniqverse" "${TAG}"
   # Game runtime service
   build_push "VEZEPyGame" "veze/game" "${TAG}"
   # Email service
   build_push "VEZEPyEmail" "veze/email" "${TAG}"
+  # XEngine service
+  build_push "VEZEPyXEngine" "veze/xengine" "${TAG}"
+  # XEngine worker (same image, different entrypoint)
+  build_push "VEZEPyXEngine" "veze/xengine-worker" "${TAG}"
 }
 
 main "$@"

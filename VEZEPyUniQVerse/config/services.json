@@ -1,8 +1,8 @@
 [
   {"name": "web",    "display": "VEZEPyWeb",     "url": "http://localhost:8001", "icon": "🌐", "description": "Web CMS & portals"},
-  {"name": "xengine","display": "VEZEPyXEngine",  "url": "http://localhost:8000/xengine/#intel", "icon": "🧑‍�", "description": "Social X engine & intel"},
-  {"name": "game",   "display": "VEZEPyGame",    "url": "http://localhost:8002", "icon": "🎮", "description": "Matchmaking & leaderboards"},
+  {"name": "xengine","display": "VEZEPyXEngine",  "url": "http://localhost:8006/#intel", "icon": "🧑‍💻", "description": "Social X engine & intel"},
+  {"name": "game",   "display": "VEZEPyGame",    "url": "http://localhost:8012", "icon": "🎮", "description": "Matchmaking & leaderboards"},
   {"name": "cgrow",  "display": "VEZEPyCGrow",   "url": "http://localhost:8003", "icon": "🚀", "description": "Career growth & ATS"},
-  {"name": "email",  "display": "VEZEPyEmail",   "url": "http://localhost:8004", "icon": "✉️", "description": "Webmail & SMTP"},
+  {"name": "email",  "display": "VEZEPyEmail",   "url": "http://localhost:8014", "icon": "✉️", "description": "Webmail & SMTP"},
   {"name": "sports", "display": "VEZEPySports",  "url": "http://localhost:8005", "icon": "🏅", "description": "Scores & leagues"}
 ]

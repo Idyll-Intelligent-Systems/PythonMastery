@@ -1,5 +1,18 @@
 # VEZEPyEmail — Python-only Email Platform (@vezeuniqverse.com)
 
+## Quickstart: Local Dev
+
+Spin up all VEZE services (UniQVerse, Game, Email, XEngine):
+
+```bash
+docker compose build
+docker compose up
+```
+
+Email API/UI: [http://localhost:8004](http://localhost:8004)
+SMTP: localhost:2525 (dev), 2587 (submission), 2465 (SMTPS)
+All endpoints available via Helm/compose.
+
 ## Architecture (C4-brief)
 
 * **Gateway & Webmail (FastAPI + Jinja2/NiceGUI)**

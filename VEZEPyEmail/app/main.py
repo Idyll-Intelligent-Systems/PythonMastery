@@ -57,10 +57,10 @@ async def _ensure_seed(session, user: str) -> None:
     if msgs:
         return
     base_links = (
-        "- Portal: http://127.0.0.1:8000/\n"
-        "- XEngine: http://127.0.0.1:8000/xengine/\n"
-        "- Game: http://127.0.0.1:8002/\n"
-        "- Email: http://127.0.0.1:8004/\n"
+        "- Portal: http://127.0.0.1:8010/\n"
+        "- XEngine: http://127.0.0.1:8006/\n"
+        "- Game: http://127.0.0.1:8012/\n"
+        "- Email: http://127.0.0.1:8014/\n"
     )
     await create_message(
         session,
@@ -92,7 +92,7 @@ async def index(request: Request, session=Depends(get_session)):
     await _ensure_seed(session, user)
     mbox = await get_or_create_mailbox(session, user)
     msgs = await list_messages_for_mailbox(session, mbox.id, limit=50)
-    return templates.TemplateResponse(request, "inbox.html", {"messages": msgs})
+    return templates.TemplateResponse(request, "inbox.html", {"messages": msgs, "user": user})
 
 @app.get("/ui/inbox", response_class=HTMLResponse)
 async def ui_inbox(request: Request, session=Depends(get_session)):
@@ -102,7 +102,7 @@ async def ui_inbox(request: Request, session=Depends(get_session)):
     await _ensure_seed(session, user)
     mbox = await get_or_create_mailbox(session, user)
     msgs = await list_messages_for_mailbox(session, mbox.id, limit=50, offset=offset, q=q)
-    return templates.TemplateResponse(request, "inbox.html", {"messages": msgs})
+    return templates.TemplateResponse(request, "inbox.html", {"messages": msgs, "user": user})
 
 
 @app.get("/ui/message/{msg_id}", response_class=HTMLResponse)

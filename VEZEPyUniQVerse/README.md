@@ -1,3 +1,14 @@
+## Quickstart: Local Dev
+
+Spin up all VEZE services (UniQVerse, Game, Email, XEngine):
+
+```bash
+docker compose build
+docker compose up
+```
+
+Portal: [http://localhost:8000](http://localhost:8000)
+All endpoints available via Helm/compose.
 **Python-only** FastAPI portal named **VEZEPyUniQVerse** that acts as the entrypoint website to all VEZE services (VEZEPyGame, VEZEPyEmail, VEZEPyWeb, VEZEPySports, VEZEPySocial, etc.).
 Work inside the repo **VEZEPyUniQVerse/** 
 All business logic must be in Python; client visuals can use **static CSS and a small vanilla JS file** (no build tools). Use **Jinja2** for templates.

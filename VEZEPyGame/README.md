@@ -1,5 +1,17 @@
 # VEZEPyGame — End-to-End (Python Only)
 
+## Quickstart: Local Dev
+
+Spin up all VEZE services (UniQVerse, Game, Email, XEngine):
+
+```bash
+docker compose build
+docker compose up
+```
+
+Game API/UI: [http://localhost:8002](http://localhost:8002)
+All endpoints available via Helm/compose.
+
 ## 1) Architecture (C4-in-brief)
 
 * **Gateway & UI (FastAPI + Jinja2/NiceGUI)**: Auth, sessions, docs, admin dashboards, player portal.

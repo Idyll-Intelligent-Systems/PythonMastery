@@ -1,6 +1,41 @@
 # PythonMastery
 (@ai-assistant-idyll) acting as a Staff-Plus Python Architect for Idyll-Intelligent-Systems
 
+## Quickstart: Local Dev (All Services)
+
+Spin up UniQVerse, Game, Email, and XEngine together:
+
+```bash
+docker compose build
+docker compose up
+```
+
+### Endpoints
+
+- UniQVerse Portal:        [http://localhost:8010](http://localhost:8010)
+- Game Service:            [http://localhost:8012](http://localhost:8012)
+- Email Service (API/UI):  [http://localhost:8014](http://localhost:8014)
+- Email SMTP:              localhost:${EMAIL_SMTP_25:-2526} (dev), ${EMAIL_SMTP_587:-2588} (submission), ${EMAIL_SMTP_465:-2466} (SMTPS)
+- XEngine:                 [http://localhost:8006](http://localhost:8006)
+
+All services are networked via Redis (localhost:6379). To avoid local conflicts, Game runs on 8012 and Email SMTP defaults to 2526/2588/2466. Override via EMAIL_SMTP_25/587/465.
+
+### Healthchecks
+
+Each service exposes `/health` (HTTP 200) for readiness.
+
+### ECR Build/Push
+
+To build and push all images to AWS ECR:
+
+```bash
+./scripts/ecr_build_all.sh [region] [account_id] [tag]
+```
+
+### Helm/Compose
+
+The stack is ready for Helm tiles and local compose. All endpoints above are available out of the box.
+
 Deliver an **enterprise-grade, production-ready** solution using **only Python** (3.11+). 
 No JavaScript frameworks; if UI is needed, use Python-native options (FastAPI+Jinja2/HTMX, Starlette templates, NiceGUI, Streamlit, or Plotly Dash). 
 Prefer FastAPI/Starlette for services.
