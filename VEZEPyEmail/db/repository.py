@@ -41,24 +41,35 @@ async def list_messages_for_mailbox(
     stmt = stmt.order_by(Message.id.desc()).limit(limit).offset(offset)
     res = await session.execute(stmt)
     msgs = res.scalars().all()
-    out: List[Dict] = []
-    for m in msgs:
-        out.append(
-            {
-                "id": m.id,
-                "mailbox_id": m.mailbox_id,
-                "subject": m.subject,
-                "from": m.from_addr,
-                "date": (m.date.isoformat() if hasattr(m.date, "isoformat") else str(m.date)),
-                "flags": [p for p in (m.flags or "").split(",") if p],
-                "labels": [p for p in (m.labels or "").split(",") if p],
-                "size": m.size,
-                "spam_score": m.spam_score,
-                "snippet": m.snippet or "",
-                "unread": _unread_from_flags(m.flags or ""),
-            }
-        )
-    return out
+    return [_map_message(m) for m in msgs]
+
+
+def _map_message(m: Message) -> Dict:
+    return {
+        "id": m.id,
+        "mailbox_id": m.mailbox_id,
+        "subject": m.subject,
+        "from": m.from_addr,
+        "date": (m.date.isoformat() if hasattr(m.date, "isoformat") else str(m.date)),
+        "flags": [p for p in (m.flags or "").split(",") if p],
+        "labels": [p for p in (m.labels or "").split(",") if p],
+        "size": m.size,
+        "spam_score": m.spam_score,
+        "snippet": m.snippet or "",
+        "unread": _unread_from_flags(m.flags or ""),
+    }
+
+
+async def get_message_for_mailbox(
+    session: AsyncSession,
+    mailbox_id: int,
+    message_id: int,
+) -> Optional[Dict]:
+    res = await session.execute(
+        select(Message).where(Message.id == message_id, Message.mailbox_id == mailbox_id)
+    )
+    msg = res.scalars().first()
+    return _map_message(msg) if msg else None
 
 
 async def mark_read(session: AsyncSession, message_id: int) -> None:

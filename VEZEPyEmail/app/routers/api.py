@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from db.repository import (
     get_mailbox_id_for_user,
     list_messages_for_mailbox,
+    get_message_for_mailbox,
     mark_read,
     toggle_star,
     set_labels,
@@ -152,13 +153,8 @@ async def message_row(
     # For simplicity fetch the mailbox by query user if provided
     user = request.query_params.get("user") or "demo@vezeuniqverse.com"
     mailbox_id = await get_mailbox_id_for_user(user, session)
-    msgs = await list_messages_for_mailbox(session, mailbox_id, limit=1, offset=0, q=None)
-    # try to find exact id, if not in first page, fetch directly
-    m = next((m for m in msgs if m["id"] == message_id), None)
-    if not m:
-        # quick direct fetch by reusing list with larger window
-        msgs = await list_messages_for_mailbox(session, mailbox_id, limit=200, offset=0)
-        m = next((m for m in msgs if m["id"] == message_id), None)
+    # Fetch directly by id within this user's mailbox to avoid pagination misses
+    m = await get_message_for_mailbox(session, mailbox_id, message_id)
     if not m:
         raise HTTPException(status_code=404, detail="Message not found")
     # Jinja environment from main app
